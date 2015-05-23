@@ -32,7 +32,9 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class MessagePackRPC implements AutoCloseable {
 
@@ -87,9 +89,7 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     private void parseNotification(ArrayCursor cursor) {
-        if (cursor.size() != 3) {
-            throw new IllegalStateException("Cursor has wrong size " + cursor.size());
-        }
+        checkArgument(cursor.size() == 3);
 
         String method = cursor.next().asString().toString();
         Value arg = cursor.next().toValue();
@@ -99,9 +99,8 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     private void parseRequest(ArrayCursor cursor) {
-        if (cursor.size() != 4) {
-            throw new IllegalStateException("Cursor has wrong size " + cursor.size());
-        }
+        checkArgument(cursor.size() == 4);
+
         long requestId = cursor.next().asInteger().asLong();
         String method = cursor.next().asString().toString();
         Value arg = cursor.next().toValue();
@@ -128,9 +127,7 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     void parseResponse(ArrayCursor cursor) {
-        if (cursor.size() != 4) {
-            throw new IllegalStateException("Cursor has wrong size " + cursor.size());
-        }
+        checkArgument(cursor.size() == 4);
 
         long requestId = cursor.next().asInteger().asLong();
         Optional<NeovimException> error = NeovimException.parseError(cursor.next());
@@ -149,9 +146,7 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     public void parsePacket(ArrayCursor cursor) {
-        if (cursor.size() != 3 && cursor.size() != 4) {
-            throw new IllegalStateException("Incoming Packet has wrong size, found: " + cursor.size());
-        }
+        checkArgument(cursor.size() == 3 || cursor.size() == 4);
 
         int type = cursor.next().asInteger().asInt();
         switch (type) {
@@ -232,10 +227,14 @@ public class MessagePackRPC implements AutoCloseable {
      * @throws IllegalStateException if called more than once
      */
     public void start() {
-        if (started) {
-            throw new IllegalStateException("Already Started");
-        }
-        executorService.submit(this::readFromInput);
+        checkState(!started, "Already Started");
+        executorService.submit(() -> {
+            try {
+                this.readFromInput();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        });
         started = true;
     }
 
