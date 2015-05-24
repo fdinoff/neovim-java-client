@@ -31,11 +31,8 @@ public class NeovimException extends RuntimeException {
                 ValueRef next = cursor.next();
                 if (next.isInteger()) {
                     long errorCode = next.asInteger().asLong();
-                    next = cursor.next();
-                    if (next.isString()) {
-                        String errorMessage = next.asString().toString();
-                        return Optional.of(new NeovimException(errorCode, errorMessage));
-                    }
+                    String errorMessage = cursor.next().toString();
+                    return Optional.of(new NeovimException(errorCode, errorMessage));
                 }
             }
         }
