@@ -77,7 +77,7 @@ public class RequestCallback<T> implements Future<T> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     @Override
@@ -105,6 +105,18 @@ public class RequestCallback<T> implements Future<T> {
 
     @Override
     public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
+        synchronized (syncObject) {
+            long endTime = System.currentTimeMillis() + unit.toMillis(timeout);
+            while (!isDone()) {
+                if (System.currentTimeMillis() > endTime) {
+                    throw new TimeoutException("timed out");
+                }
+                unit.timedWait(syncObject, timeout);
+            }
+        }
+        if (error != null) {
+            throw new ExecutionException(error);
+        }
+        return result;
     }
 }
