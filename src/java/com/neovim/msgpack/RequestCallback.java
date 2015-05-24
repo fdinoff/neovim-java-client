@@ -53,9 +53,7 @@ public class RequestCallback<T> implements Future<T> {
                 throw new IllegalStateException("All ready set Result");
             }
             try {
-                System.out.println("before deserializer " + result);
                 this.result = deserializer.apply(objectMapper, result);
-                System.out.println("Result is " + this.result);
             } catch (RuntimeException e) {
                 // unwrap?
                 e.printStackTrace();
