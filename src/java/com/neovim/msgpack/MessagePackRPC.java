@@ -174,9 +174,12 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     private <T> Future<T> sendRequest(Request data, RequestCallback<T> callback) throws IOException {
-        long id = idGenerator.nextId();
-        data.setRequestId(id);
-        registerCallback(id, callback);
+        // Make sure the id is not already in use. (Should never loop)
+        long id;
+        do {
+            id = idGenerator.nextId();
+            data.setRequestId(id);
+        } while(!registerCallback(id, callback));
 
         try {
             send(data);
@@ -254,8 +257,12 @@ public class MessagePackRPC implements AutoCloseable {
         }
     }
 
-    private void registerCallback(long requestId, RequestCallback<?> callback) {
-        callbacks.put(requestId, callback);
+    /**
+     * Register callback with the requestId.
+     * @return true if successfully added to the map. Returns false if something already contained the requestId.
+     */
+    private boolean registerCallback(long requestId, RequestCallback<?> callback) {
+        return callbacks.putIfAbsent(requestId, callback) == null;
     }
 
     private RequestCallback<?> removeCallback(long id) {
