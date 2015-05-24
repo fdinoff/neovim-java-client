@@ -33,17 +33,23 @@ import static org.mockito.Mockito.when;
 public class MessagePackRPCTest {
     private static final String METHOD = "method";
     private static final Integer ARG = 1;
+    private static final long REQUEST_ID = 1234L;
 
     private MessagePackRPC messagePackRPC;
     private TestConnection testConnection;
 
     @Mock InputStream inputStream;
     @Mock OutputStream outputStream;
+    @Mock MessagePackIdGenerator idGenerator;
 
     @Before
     public void setUp() throws Exception {
         testConnection = new TestConnection(inputStream, outputStream);
-        messagePackRPC = new MessagePackRPC(testConnection);
+
+        messagePackRPC = new MessagePackRPC(
+                testConnection,
+                MessagePackRPC.defaultObjectMapper(),
+                idGenerator);
     }
 
     @Test
@@ -101,6 +107,7 @@ public class MessagePackRPCTest {
 
     @Test
     public void sendRequest_sendsRequestArray() throws Exception {
+        when(idGenerator.nextId()).thenReturn(REQUEST_ID);
         Request request = new Request(METHOD, ARG);
         ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
         messagePackRPC.sendRequest(request, Object.class);
@@ -112,8 +119,7 @@ public class MessagePackRPCTest {
         MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(argumentCaptor.getValue());
         assertThat(unpacker.unpackArrayHeader(), is(4));
         assertThat(unpacker.unpackInt(), is(Packet.REQUEST_ID));
-        // Unpack request id. I don't know how to test the value
-        unpacker.unpackInt();
+        assertThat(unpacker.unpackLong(), is(REQUEST_ID));
         assertThat(unpacker.unpackString(), is(METHOD));
         assertThat(unpacker.unpackArrayHeader(), is(1));
         assertThat(unpacker.unpackInt(), is(ARG));

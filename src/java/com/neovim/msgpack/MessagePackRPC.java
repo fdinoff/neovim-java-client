@@ -55,7 +55,7 @@ public class MessagePackRPC implements AutoCloseable {
         OutputStream getOutputStream();
     }
 
-    private final MessagePackIdGenerator idGenerator = new MessagePackIdGenerator();
+    private final MessagePackIdGenerator idGenerator;
     private final MessagePack msgPack = new MessagePack();
 
     private final Connection connection;
@@ -69,11 +69,20 @@ public class MessagePackRPC implements AutoCloseable {
     private Future<?> receiverFuture = null;
     private volatile boolean closed = false;
 
+    public static ObjectMapper defaultObjectMapper() {
+        return new ObjectMapper(new MessagePackFactory());
+    }
+
     public MessagePackRPC(Connection connection) {
-        this(connection, new ObjectMapper(new MessagePackFactory()));
+        this(connection, defaultObjectMapper());
     }
 
     public MessagePackRPC(Connection connection, ObjectMapper objectMapper) {
+        this(connection, objectMapper, new MessagePackIdGenerator());
+    }
+
+    public MessagePackRPC(Connection connection, ObjectMapper objectMapper, MessagePackIdGenerator idGenerator) {
+        this.idGenerator = checkNotNull(idGenerator);
         this.objectMapper = checkNotNull(objectMapper);
         this.connection = checkNotNull(connection);
         notificationHandler = (method, arg) -> System.out.print("Received notification" + method + "(" + arg + ")");
