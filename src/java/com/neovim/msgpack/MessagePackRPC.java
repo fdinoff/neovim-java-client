@@ -167,11 +167,10 @@ public class MessagePackRPC implements AutoCloseable {
     // TODO: Determine if this should be on a separate thread
     private synchronized void send(Packet packet) throws IOException {
         // objectMapper closes the stream after writing. Write to temporary buffer first
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        objectMapper.writeValue(out, packet);
+        byte[] buffer = objectMapper.writeValueAsBytes(packet);
 
         OutputStream output = connection.getOutputStream();
-        output.write(out.toByteArray());
+        output.write(buffer);
         output.flush();
     }
 
