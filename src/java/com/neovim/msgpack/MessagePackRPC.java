@@ -211,16 +211,17 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     public void setRequestHandler(BiFunction<String, Value, ?> requestHandler) {
-        this.requestHandler = requestHandler;
+        this.requestHandler = checkNotNull(requestHandler);
     }
 
     /**
      * Set notification handler. The handler will be passed the function name as a String and the argument as a
      * MessagePack Value. It is up to the handler to decode the argument properly.
      * @param notificationHandler the notification handler that should be used when a notification is received.
+     * @throws NullPointerException if notificationHandler is null
      */
     public void setNotificationHandler(BiConsumer<String, Value> notificationHandler) {
-        this.notificationHandler = notificationHandler;
+        this.notificationHandler = checkNotNull(notificationHandler);
     }
 
     /**
