@@ -23,10 +23,10 @@ import java.io.OutputStream;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -73,7 +73,7 @@ public class MessagePackRPC implements AutoCloseable {
 
     private final ConcurrentMap<Long, RequestCallback<?>> callbacks = new ConcurrentHashMap<>();
 
-    private boolean started = false;
+    private Future<?> receiverFuture = null;
     private volatile boolean closed = false;
 
     public MessagePackRPC(Connection connection) {
@@ -226,15 +226,8 @@ public class MessagePackRPC implements AutoCloseable {
      * @throws IllegalStateException if called more than once
      */
     public void start() {
-        checkState(!started, "Already Started");
-        executorService.submit(() -> {
-            try {
-                this.readFromInput();
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-        });
-        started = true;
+        checkState(receiverFuture == null, "Already Started");
+        receiverFuture = executorService.submit(this::readFromInput);
     }
 
     private void readFromInput() {
@@ -275,10 +268,13 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException, InterruptedException {
+    public void close() throws IOException, ExecutionException, InterruptedException {
         closed = true;
         connection.close();
         executorService.shutdown();
-        executorService.awaitTermination(1, TimeUnit.SECONDS);
+        if (receiverFuture != null) {
+            // Check to see if receiver thread had an exception
+            receiverFuture.get();
+        }
     }
 }
