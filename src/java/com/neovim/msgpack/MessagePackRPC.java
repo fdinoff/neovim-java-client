@@ -121,7 +121,7 @@ public class MessagePackRPC implements AutoCloseable {
             valueRef.writeTo(packer);
             packer.close();
         } catch (IOException e) {
-            throw new Error("ByteArrayOutputStream can't throw.");
+            throw new Error("ByteArrayOutputStream can't throw.", e);
         }
         return out.toByteArray();
     }
