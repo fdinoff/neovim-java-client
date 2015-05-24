@@ -164,18 +164,12 @@ public class MessagePackRPCTest {
 
     private class TestConnection implements MessagePackRPC.Connection {
 
-        private boolean alive = true;
         private final InputStream inputStream;
         private final OutputStream outputStream;
 
         public TestConnection(InputStream inputStream, OutputStream outputStream) {
             this.inputStream = checkNotNull(inputStream);
             this.outputStream = checkNotNull(outputStream);
-        }
-
-        @Override
-        public boolean isAlive() {
-            return alive;
         }
 
         @Override
@@ -189,8 +183,6 @@ public class MessagePackRPCTest {
         }
 
         @Override
-        public void close() throws IOException {
-            alive = false;
-        }
+        public void close() throws IOException {}
     }
 }

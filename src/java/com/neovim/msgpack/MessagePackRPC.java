@@ -43,12 +43,6 @@ public class MessagePackRPC implements AutoCloseable {
      */
     public interface Connection extends Closeable {
         /**
-         * Check if connection is alive. Does not tell if streams are open.
-         * @return true if connection is alive
-         */
-        boolean isAlive();
-
-        /**
          * Stream from server.
          * @return InputStream connected for the output of the server.
          */
