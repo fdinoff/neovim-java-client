@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -62,7 +61,7 @@ public class MessagePackRPC implements AutoCloseable {
         OutputStream getOutputStream();
     }
 
-    private final AtomicLong currentRequest = new AtomicLong(0);
+    private final MessagePackIdGenerator idGenerator = new MessagePackIdGenerator();
     private final MessagePack msgPack = new MessagePack();
 
     private final Connection connection;
@@ -175,7 +174,7 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     private <T> Future<T> sendRequest(Request data, RequestCallback<T> callback) throws IOException {
-        long id = currentRequest.incrementAndGet();
+        long id = idGenerator.nextId();
         data.setRequestId(id);
         registerCallback(id, callback);
 
