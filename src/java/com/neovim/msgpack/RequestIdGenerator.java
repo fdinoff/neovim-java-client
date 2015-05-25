@@ -5,13 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Generator for MessagePack request ids. Requests ids must must be 32 bit unsigned integers.
  */
-public class MessagePackIdGenerator {
+public class RequestIdGenerator {
     private final AtomicInteger id;
 
     /**
      * Generator that starts where the first Id is 0.
      */
-    public MessagePackIdGenerator() {
+    public RequestIdGenerator() {
         this(0);
     }
 
@@ -19,7 +19,7 @@ public class MessagePackIdGenerator {
      * Initialize the generator to the initialValue treated as an unsigned integer
      * @param initialValue unsigned integer value used for initial id.
      */
-    public MessagePackIdGenerator(int initialValue) {
+    public RequestIdGenerator(int initialValue) {
          id = new AtomicInteger(initialValue);
     }
 

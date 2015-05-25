@@ -55,7 +55,7 @@ public class MessagePackRPC implements AutoCloseable {
         OutputStream getOutputStream();
     }
 
-    private final MessagePackIdGenerator idGenerator;
+    private final RequestIdGenerator idGenerator;
     private final MessagePack msgPack = new MessagePack();
 
     private final Connection connection;
@@ -78,10 +78,10 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     public MessagePackRPC(Connection connection, ObjectMapper objectMapper) {
-        this(connection, objectMapper, new MessagePackIdGenerator());
+        this(connection, objectMapper, new RequestIdGenerator());
     }
 
-    public MessagePackRPC(Connection connection, ObjectMapper objectMapper, MessagePackIdGenerator idGenerator) {
+    public MessagePackRPC(Connection connection, ObjectMapper objectMapper, RequestIdGenerator idGenerator) {
         this.idGenerator = checkNotNull(idGenerator);
         this.objectMapper = checkNotNull(objectMapper);
         this.connection = checkNotNull(connection);

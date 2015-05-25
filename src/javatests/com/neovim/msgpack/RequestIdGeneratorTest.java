@@ -9,23 +9,23 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 @RunWith(JUnit4.class)
-public class MessagePackIdGeneratorTest {
+public class RequestIdGeneratorTest {
     @Test
     public void nextId_twoAdjacentResultsNextToEachOther() {
-        MessagePackIdGenerator id = new MessagePackIdGenerator();
+        RequestIdGenerator id = new RequestIdGenerator();
         assertThat(id.nextId() + 1, is(id.nextId()));
     }
 
     @Test
     public void nextId_unsignedWrapToZero() {
-        MessagePackIdGenerator id = new MessagePackIdGenerator(-1);
+        RequestIdGenerator id = new RequestIdGenerator(-1);
         assertThat(id.nextId(), is(UnsignedInteger.MAX_VALUE.longValue()));
         assertThat(id.nextId(), is(0L));
     }
 
     @Test
     public void nextId_unsignedForNegative() {
-        MessagePackIdGenerator id = new MessagePackIdGenerator(Integer.MIN_VALUE);
+        RequestIdGenerator id = new RequestIdGenerator(Integer.MIN_VALUE);
         assertThat(id.nextId(), is(((long) Integer.MAX_VALUE) + 1L));
     }
 }
