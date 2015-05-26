@@ -40,7 +40,8 @@ public class MessagePackRPCTest {
 
     @Mock InputStream inputStream;
     @Mock OutputStream outputStream;
-    @Mock RequestIdGenerator idGenerator;
+    @Mock
+    RequestIdGenerator idGenerator;
 
     @Before
     public void setUp() throws Exception {

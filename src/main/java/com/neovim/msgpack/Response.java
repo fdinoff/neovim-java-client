@@ -22,7 +22,6 @@ public class Response implements Packet {
         return RESPONSE_ID;
     }
 
-
     public void setError(NeovimException exception) {
         this.exception = exception;
     }

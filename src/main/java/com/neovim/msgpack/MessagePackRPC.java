@@ -1,5 +1,7 @@
 package com.neovim.msgpack;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +12,7 @@ import org.msgpack.core.MessagePackException;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
+import org.msgpack.jackson.dataformat.MessagePackParser;
 import org.msgpack.value.ArrayCursor;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueRef;
@@ -70,7 +73,10 @@ public class MessagePackRPC implements AutoCloseable {
     private volatile boolean closed = false;
 
     public static ObjectMapper defaultObjectMapper() {
-        return new ObjectMapper(new MessagePackFactory());
+        MessagePackFactory factory = new MessagePackFactory();
+        factory.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+        factory.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+        return new ObjectMapper(factory);
     }
 
     public MessagePackRPC(Connection connection) {
