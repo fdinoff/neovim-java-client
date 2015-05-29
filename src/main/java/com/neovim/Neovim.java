@@ -2,7 +2,6 @@ package com.neovim;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.neovim.msgpack.MessagePackRPC;
-import com.neovim.msgpack.Notification;
 import com.neovim.msgpack.Request;
 
 import java.io.IOException;
@@ -27,13 +26,11 @@ public class Neovim implements AutoCloseable {
     }
 
     public void sendVimCommand(String command) throws IOException {
-        Notification notification = new Notification("vim_command", command);
-        messagePackRPC.sendNotification(notification);
+        messagePackRPC.sendNotification("vim_command", command);
     }
 
     public void feedKeys(String keys, String mode, boolean escapeCsi) throws IOException {
-        Notification notification = new Notification("vim_feedkeys", keys, mode, escapeCsi);
-        messagePackRPC.sendNotification(notification);
+        messagePackRPC.sendNotification("vim_feedkeys", keys, mode, escapeCsi);
     }
 
     public Future<Long> sendInput(String input) throws IOException {
@@ -64,8 +61,7 @@ public class Neovim implements AutoCloseable {
     }
 
     public void changeDirectory(String directory) throws IOException {
-        Notification notification = new Notification("vim_change_directory", directory);
-        messagePackRPC.sendNotification(notification);
+        messagePackRPC.sendNotification("vim_change_directory", directory);
     }
 
     @Override

@@ -129,9 +129,8 @@ public class MessagePackRPCTest {
 
     @Test
     public void sendNotification_sendsNotificationArray() throws Exception {
-        Notification notification = new Notification(METHOD, ARG);
         ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
-        messagePackRPC.sendNotification(notification);
+        messagePackRPC.sendNotification(METHOD, ARG);
 
         verify(outputStream).write(argumentCaptor.capture());
         verify(outputStream).flush();

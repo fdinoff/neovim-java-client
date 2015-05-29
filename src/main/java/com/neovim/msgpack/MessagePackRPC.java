@@ -216,8 +216,8 @@ public class MessagePackRPC implements AutoCloseable {
         return sendRequest(data, callback);
     }
 
-    public void sendNotification(Notification notification) throws IOException {
-        send(notification);
+    public void sendNotification(String functionName, Object... args) throws IOException {
+        send(new Notification(functionName, args));
     }
 
     public void setRequestHandler(BiFunction<String, Value, ?> requestHandler) {
