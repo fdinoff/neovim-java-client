@@ -138,7 +138,7 @@ public class MessagePackRPC implements AutoCloseable {
 
         long requestId = cursor.next().asInteger().asLong();
         Optional<NeovimException> error = NeovimException.parseError(cursor.next());
-        RequestCallback<?> callback = removeCallback(requestId);
+        RequestCallback<?> callback = callbacks.remove(requestId);
         if (error.isPresent()) {
             // No value present
             callback.setError(error.get());
@@ -187,12 +187,12 @@ public class MessagePackRPC implements AutoCloseable {
         do {
             id = idGenerator.nextId();
             data.setRequestId(id);
-        } while(!registerCallback(id, callback));
+        } while(callbacks.putIfAbsent(id, callback) != null);
 
         try {
             send(data);
         } catch (IOException e) {
-            removeCallback(id);
+            callbacks.remove(id);
             throw e;
         }
         return callback;
@@ -268,18 +268,6 @@ public class MessagePackRPC implements AutoCloseable {
                 e.printStackTrace();
             }
         }
-    }
-
-    /**
-     * Register callback with the requestId.
-     * @return true if successfully added to the map. Returns false if something already contained the requestId.
-     */
-    private boolean registerCallback(long requestId, RequestCallback<?> callback) {
-        return callbacks.putIfAbsent(requestId, callback) == null;
-    }
-
-    private RequestCallback<?> removeCallback(long id) {
-        return callbacks.remove(id);
     }
 
     public void registerModule(Module module) {
