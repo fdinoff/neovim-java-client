@@ -40,17 +40,14 @@ public class MessagePackRPCTest {
 
     @Mock InputStream inputStream;
     @Mock OutputStream outputStream;
-    @Mock
-    RequestIdGenerator idGenerator;
+    @Mock RequestIdGenerator idGenerator;
 
     @Before
     public void setUp() throws Exception {
         testConnection = new TestConnection(inputStream, outputStream);
 
         messagePackRPC = new MessagePackRPC(
-                testConnection,
-                MessagePackRPC.defaultObjectMapper(),
-                idGenerator);
+                testConnection, MessagePackRPC.defaultObjectMapper(), idGenerator);
     }
 
     @Test
@@ -145,7 +142,8 @@ public class MessagePackRPCTest {
     }
 
     @Test
-    public void close_receiverThreadException_wrappedInExecutionException() throws IOException, InterruptedException {
+    public void close_receiverThreadException_wrappedInExecutionException()
+            throws IOException, InterruptedException {
         RuntimeException exception = new RuntimeException();
         when(inputStream.read(any(byte[].class))).thenThrow(exception);
         messagePackRPC.start();
@@ -153,7 +151,7 @@ public class MessagePackRPCTest {
         try {
             messagePackRPC.close();
             fail();
-        } catch(ExecutionException e) {
+        } catch (ExecutionException e) {
             assertThat(e.getCause(), is(exception));
         }
     }

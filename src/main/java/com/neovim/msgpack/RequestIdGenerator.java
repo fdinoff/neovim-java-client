@@ -17,14 +17,16 @@ public class RequestIdGenerator {
 
     /**
      * Initialize the generator to the initialValue treated as an unsigned integer
+     *
      * @param initialValue unsigned integer value used for initial id.
      */
     public RequestIdGenerator(int initialValue) {
-         id = new AtomicInteger(initialValue);
+        id = new AtomicInteger(initialValue);
     }
 
     /**
      * Get the next id.
+     *
      * @return next id where id is between 0 and 2^32 - 1 (32 bit unsigned integer range)
      */
     public long nextId() {
