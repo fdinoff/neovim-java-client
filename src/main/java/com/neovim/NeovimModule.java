@@ -22,11 +22,12 @@ import java.util.function.BiFunction;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class NeovimModule extends SimpleModule {
-    private final MessagePackRPC messagePackRPC;
     // TODO: Change from hardcoded values to values retrieved from getApiInfo
-    private final int bufferType = 0;
-    private final int windowType = 1;
-    private final int tabPageType = 2;
+    private static final int bufferType = 0;
+    private static final int windowType = 1;
+    private static final int tabPageType = 2;
+
+    private final MessagePackRPC messagePackRPC;
 
     public NeovimModule(MessagePackRPC messagePackRPC) {
         super("Neovim Module");
