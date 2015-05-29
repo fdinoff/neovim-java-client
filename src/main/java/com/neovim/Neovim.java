@@ -38,27 +38,29 @@ public class Neovim implements AutoCloseable {
 
     public Future<Long> sendInput(String input) throws IOException {
         Request request = new Request("vim_input", input);
-        return messagePackRPC.sendRequest(request, Long.class);
+        return messagePackRPC.sendRequest(Long.class, request);
     }
 
     public Future<String> replaceTermcodes(String str, boolean fromPart, boolean doLt, boolean special) throws IOException {
         Request request = new Request("vim_replace_termcodes", str, fromPart, doLt, special);
-        return messagePackRPC.sendRequest(request, String.class);
+        return messagePackRPC.sendRequest(String.class, request);
     }
 
     public Future<String> commandOutput(String str) throws IOException {
         Request request = new Request("vim_command_output", str);
-        return messagePackRPC.sendRequest(request, String.class);
+        return messagePackRPC.sendRequest(String.class, request);
     }
+
+    // TODO: eval
 
     public Future<Long> stringWidth(String str) throws IOException {
         Request request = new Request("vim_strwidth", str);
-        return messagePackRPC.sendRequest(request, Long.class);
+        return messagePackRPC.sendRequest(Long.class, request);
     }
 
     public Future<ArrayList<byte[]>> getRuntimePaths() throws IOException {
         Request request = new Request("vim_list_runtime_paths");
-        return messagePackRPC.sendRequest(request, new TypeReference<ArrayList<byte[]>>() {});
+        return messagePackRPC.sendRequest(new TypeReference<ArrayList<byte[]>>() {}, request);
     }
 
     public void changeDirectory(String directory) throws IOException {

@@ -111,7 +111,7 @@ public class MessagePackRPCTest {
         when(idGenerator.nextId()).thenReturn(REQUEST_ID);
         Request request = new Request(METHOD, ARG);
         ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
-        messagePackRPC.sendRequest(request, Object.class);
+        messagePackRPC.sendRequest(Object.class, request);
 
         verify(outputStream).write(argumentCaptor.capture());
         verify(outputStream).flush();

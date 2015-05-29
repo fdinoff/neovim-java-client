@@ -199,18 +199,19 @@ public class MessagePackRPC implements AutoCloseable {
         return callback;
     }
 
-    public <T> Future<T> sendRequest(Request data, TypeReference<T> typeReference) throws IOException {
+    public <T> Future<T> sendRequest(
+            TypeReference<T> typeReference, Request data) throws IOException {
         RequestCallback<T> callback = new RequestCallback<>(typeReference);
         return sendRequest(data, callback);
     }
 
-    public <T> Future<T> sendRequest(Request data, Class<T> resultClass) throws IOException {
+    public <T> Future<T> sendRequest(Class<T> resultClass, Request data) throws IOException {
         RequestCallback<T> callback = new RequestCallback<>(resultClass);
         return sendRequest(data, callback);
     }
 
-    public <T> Future<T> sendRequest(Request data, Function<ValueRef, T> deserializer)
-            throws IOException {
+    public <T> Future<T> sendRequest(
+            Function<ValueRef, T> deserializer, Request data) throws IOException {
         RequestCallback<T> callback = new RequestCallback<>(deserializer);
         return sendRequest(data, callback);
     }
