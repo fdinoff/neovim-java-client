@@ -12,7 +12,6 @@ import org.msgpack.core.MessagePackException;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
-import org.msgpack.jackson.dataformat.MessagePackParser;
 import org.msgpack.value.ArrayCursor;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueRef;
