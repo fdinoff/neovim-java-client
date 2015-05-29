@@ -9,13 +9,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class Neovim implements AutoCloseable {
 
     private final MessagePackRPC messagePackRPC;
 
-    public Neovim(MessagePackRPC.Connection connection) {
-        this.messagePackRPC = new MessagePackRPC(connection);
-        this.messagePackRPC.start();
+    public static Neovim connectTo(MessagePackRPC.Connection connection) {
+        MessagePackRPC messagePackRPC = new MessagePackRPC(connection);
+        Neovim neovim = new Neovim(messagePackRPC);
+        messagePackRPC.start();
+        return neovim;
+    }
+
+    Neovim(MessagePackRPC messagePackRPC) {
+        this.messagePackRPC = checkNotNull(messagePackRPC);
     }
 
     public void sendVimCommand(String command) throws IOException {

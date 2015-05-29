@@ -23,7 +23,7 @@ MessagePackRPC.Connection connection = new EmbeddedNeovim("nvim");
 Once you have a connection you can create a Neovim instance that will talk to the connected neovim instance.
 
 ```java
-try (Neovim neovim = new Neovim(connection)) {
+try (Neovim neovim = Neovim.connectTo(connection)) {
     <use neovim>
 }
 ```
