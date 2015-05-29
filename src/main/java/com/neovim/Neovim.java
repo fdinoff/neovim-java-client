@@ -2,7 +2,6 @@ package com.neovim;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.neovim.msgpack.MessagePackRPC;
-import com.neovim.msgpack.Request;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,30 +33,32 @@ public class Neovim implements AutoCloseable {
     }
 
     public Future<Long> sendInput(String input) throws IOException {
-        Request request = new Request("vim_input", input);
-        return messagePackRPC.sendRequest(Long.class, request);
+        return messagePackRPC.sendRequest(Long.class, "vim_input", input);
     }
 
-    public Future<String> replaceTermcodes(String str, boolean fromPart, boolean doLt, boolean special) throws IOException {
-        Request request = new Request("vim_replace_termcodes", str, fromPart, doLt, special);
-        return messagePackRPC.sendRequest(String.class, request);
+    public Future<Window> getCurrentWindow() throws IOException {
+        return messagePackRPC.sendRequest(Window.class, "vim_get_current_window");
+    }
+
+    public Future<String> replaceTermcodes(
+            String str, boolean fromPart, boolean doLt, boolean special) throws IOException {
+        return messagePackRPC.sendRequest(
+                String.class, "vim_replace_termcodes", str, fromPart, doLt, special);
     }
 
     public Future<String> commandOutput(String str) throws IOException {
-        Request request = new Request("vim_command_output", str);
-        return messagePackRPC.sendRequest(String.class, request);
+        return messagePackRPC.sendRequest(String.class, "vim_command_output", str);
     }
 
     // TODO: eval
 
     public Future<Long> stringWidth(String str) throws IOException {
-        Request request = new Request("vim_strwidth", str);
-        return messagePackRPC.sendRequest(Long.class, request);
+        return messagePackRPC.sendRequest(Long.class, "vim_strwidth", str);
     }
 
     public Future<ArrayList<byte[]>> getRuntimePaths() throws IOException {
-        Request request = new Request("vim_list_runtime_paths");
-        return messagePackRPC.sendRequest(new TypeReference<ArrayList<byte[]>>() {}, request);
+        return messagePackRPC.sendRequest(
+                new TypeReference<ArrayList<byte[]>>() {}, "vim_list_runtime_paths");
     }
 
     public void changeDirectory(String directory) throws IOException {

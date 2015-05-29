@@ -109,9 +109,8 @@ public class MessagePackRPCTest {
     @Test
     public void sendRequest_sendsRequestArray() throws Exception {
         when(idGenerator.nextId()).thenReturn(REQUEST_ID);
-        Request request = new Request(METHOD, ARG);
         ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
-        messagePackRPC.sendRequest(Object.class, request);
+        messagePackRPC.sendRequest(Object.class, METHOD, ARG);
 
         verify(outputStream).write(argumentCaptor.capture());
         verify(outputStream).flush();
