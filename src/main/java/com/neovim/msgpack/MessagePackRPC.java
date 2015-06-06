@@ -190,7 +190,7 @@ public class MessagePackRPC implements AutoCloseable {
             callbacks.remove(id);
             throw e;
         }
-        return callback;
+        return callback.getCompletableFuture();
     }
 
     public <T> Future<T> sendRequest(
