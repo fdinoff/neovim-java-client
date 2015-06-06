@@ -6,7 +6,7 @@ import com.neovim.msgpack.MessagePackRPC;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -23,7 +23,7 @@ public class TabPage {
         return id;
     }
 
-    public Future<List<Window>> getWindows() throws IOException {
+    public CompletableFuture<List<Window>> getWindows() throws IOException {
         return messagePackRPC.sendRequest(
                 new TypeReference<List<Window>>() {}, "tabpage_get_windows", this);
     }
@@ -31,11 +31,11 @@ public class TabPage {
     // TODO: tabpage_get_var
     // TODO: tabpage_set_var
 
-    public Future<Window> getWindow() throws IOException {
+    public CompletableFuture<Window> getWindow() throws IOException {
         return messagePackRPC.sendRequest(Window.class, "tabpage_get_window", this);
     }
 
-    public Future<Boolean> isValid() throws IOException {
+    public CompletableFuture<Boolean> isValid() throws IOException {
         return messagePackRPC.sendRequest(Boolean.class, "tabpage_is_valid", this);
     }
 

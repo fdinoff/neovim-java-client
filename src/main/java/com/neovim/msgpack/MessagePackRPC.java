@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -176,7 +177,8 @@ public class MessagePackRPC implements AutoCloseable {
         output.flush();
     }
 
-    private <T> Future<T> sendRequest(Request data, RequestCallback<T> callback) throws IOException {
+    private <T> CompletableFuture<T> sendRequest(Request data, RequestCallback<T> callback)
+            throws IOException {
         // Make sure the id is not already in use. (Should never loop)
         long id;
         do {
@@ -193,20 +195,20 @@ public class MessagePackRPC implements AutoCloseable {
         return callback.getCompletableFuture();
     }
 
-    public <T> Future<T> sendRequest(
+    public <T> CompletableFuture<T> sendRequest(
             TypeReference<T> typeReference, String functionName, Object... args)
             throws IOException {
         RequestCallback<T> callback = new RequestCallback<>(typeReference);
         return sendRequest(new Request(functionName, args), callback);
     }
 
-    public <T> Future<T> sendRequest(Class<T> resultClass, String functionName, Object... args)
-            throws IOException {
+    public <T> CompletableFuture<T> sendRequest(
+            Class<T> resultClass, String functionName, Object... args) throws IOException {
         RequestCallback<T> callback = new RequestCallback<>(resultClass);
         return sendRequest(new Request(functionName, args), callback);
     }
 
-    public <T> Future<T> sendRequest(
+    public <T> CompletableFuture<T> sendRequest(
             Function<ValueRef, T> deserializer, String functionName, Object... args)
             throws IOException {
         RequestCallback<T> callback = new RequestCallback<>(deserializer);

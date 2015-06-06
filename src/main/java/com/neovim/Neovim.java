@@ -5,7 +5,7 @@ import com.neovim.msgpack.MessagePackRPC;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -33,31 +33,31 @@ public class Neovim implements AutoCloseable {
         messagePackRPC.sendNotification("vim_feedkeys", keys, mode, escapeCsi);
     }
 
-    public Future<Long> sendInput(String input) throws IOException {
+    public CompletableFuture<Long> sendInput(String input) throws IOException {
         return messagePackRPC.sendRequest(Long.class, "vim_input", input);
     }
 
-    public Future<Window> getCurrentWindow() throws IOException {
+    public CompletableFuture<Window> getCurrentWindow() throws IOException {
         return messagePackRPC.sendRequest(Window.class, "vim_get_current_window");
     }
 
-    public Future<String> replaceTermcodes(
+    public CompletableFuture<String> replaceTermcodes(
             String str, boolean fromPart, boolean doLt, boolean special) throws IOException {
         return messagePackRPC.sendRequest(
                 String.class, "vim_replace_termcodes", str, fromPart, doLt, special);
     }
 
-    public Future<String> commandOutput(String str) throws IOException {
+    public CompletableFuture<String> commandOutput(String str) throws IOException {
         return messagePackRPC.sendRequest(String.class, "vim_command_output", str);
     }
 
     // TODO: eval
 
-    public Future<Long> stringWidth(String str) throws IOException {
+    public CompletableFuture<Long> stringWidth(String str) throws IOException {
         return messagePackRPC.sendRequest(Long.class, "vim_strwidth", str);
     }
 
-    public Future<ArrayList<byte[]>> getRuntimePaths() throws IOException {
+    public CompletableFuture<ArrayList<byte[]>> getRuntimePaths() throws IOException {
         return messagePackRPC.sendRequest(
                 new TypeReference<ArrayList<byte[]>>() {}, "vim_list_runtime_paths");
     }

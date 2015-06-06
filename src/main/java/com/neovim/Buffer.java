@@ -5,7 +5,7 @@ import com.neovim.msgpack.MessagePackRPC;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -22,11 +22,11 @@ public class Buffer {
         return id;
     }
 
-    public Future<Long> getLineCount() throws IOException {
+    public CompletableFuture<Long> getLineCount() throws IOException {
         return messagePackRPC.sendRequest(Long.class, "buffer_line_count", this);
     }
 
-    public Future<byte[]> getLine(int index) throws IOException {
+    public CompletableFuture<byte[]> getLine(int index) throws IOException {
         return messagePackRPC.sendRequest(byte[].class, "buffer_get_line", this, index);
     }
 
@@ -41,7 +41,7 @@ public class Buffer {
     /*
 
     TODO: finish getLineSlice
-    public Future<ArrayList<byte[]>> getLineSlice(int start, int end, boolean includeStart, boolean includeEnd) throws IOException {
+    public CompletableFuture<ArrayList<byte[]>> getLineSlice(int start, int end, boolean includeStart, boolean includeEnd) throws IOException {
         Request request = new Request("buffer_get_line_slice", this, start, end, includeStart, includeEnd);
         return messagePackRPC.sendRequest(request, ArrayList.class);
     }
@@ -52,11 +52,11 @@ public class Buffer {
     // TODO: this_get_option
     // TODO: this_set_option
 
-    public Future<Long> getBufferNumber() throws IOException {
+    public CompletableFuture<Long> getBufferNumber() throws IOException {
         return messagePackRPC.sendRequest(Long.class, "buffer_get_number", this);
     }
 
-    public Future<byte[]> getName() throws IOException {
+    public CompletableFuture<byte[]> getName() throws IOException {
         return messagePackRPC.sendRequest(byte[].class, "buffer_get_name", this);
     }
 
@@ -64,7 +64,7 @@ public class Buffer {
         messagePackRPC.sendNotification("buffer_set_name", this, name);
     }
 
-    public Future<Boolean> isValid() throws IOException {
+    public CompletableFuture<Boolean> isValid() throws IOException {
         return messagePackRPC.sendRequest(Boolean.class, "buffer_is_valid", this);
     }
 
