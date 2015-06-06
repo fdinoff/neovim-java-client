@@ -10,36 +10,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class RequestCallback<T> implements Future<T> {
 
     private final Object syncObject = new Object();
-    private NeovimException error = null;
+    private Exception error = null;
     private T result = null;
-    private final BiFunction<ObjectMapper, byte[], T> deserializer;
+    private final IOBiFunction<ObjectMapper, byte[], T> deserializer;
 
     public RequestCallback(TypeReference<T> typeReference) {
-        this.deserializer = (objectMapper, bytes) -> {
-            try {
-                return objectMapper.readValue(bytes, typeReference);
-            } catch (IOException e) {
-                // Wrap?
-                throw new RuntimeException(e);
-            }
-        };
+        this.deserializer = (objectMapper, bytes) -> objectMapper.readValue(bytes, typeReference);
     }
 
     public RequestCallback(Class<T> resultClass) {
-        this.deserializer = (objectMapper, bytes) -> {
-            try {
-                return objectMapper.readValue(bytes, resultClass);
-            } catch (IOException e) {
-                // Wrap?
-                throw new RuntimeException(e);
-            }
-        };
+        this.deserializer = (objectMapper, bytes) -> objectMapper.readValue(bytes, resultClass);
     }
 
     public RequestCallback(Function<ValueRef, T> deserializer) {
@@ -47,20 +32,15 @@ public class RequestCallback<T> implements Future<T> {
                 deserializer.apply(MessagePack.newDefaultUnpacker(bytes).getCursor().next());
     }
 
-    public void setResult(ObjectMapper objectMapper, byte[] result) throws IOException {
+    public void setResult(ObjectMapper objectMapper, byte[] result) {
         synchronized (syncObject) {
             if (isDone()) {
                 throw new IllegalStateException("All ready set Result");
             }
             try {
                 this.result = deserializer.apply(objectMapper, result);
-            } catch (RuntimeException e) {
-                // unwrap?
-                e.printStackTrace();
-                if (e.getCause() instanceof IOException) {
-                    throw (IOException) e.getCause();
-                }
-                throw e;
+            } catch (IOException e) {
+                this.error = e;
             }
             syncObject.notifyAll();
         }

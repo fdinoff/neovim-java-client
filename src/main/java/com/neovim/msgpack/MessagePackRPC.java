@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.msgpack.core.MessageFormat;
-import org.msgpack.core.MessageFormatException;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessagePackException;
 import org.msgpack.core.MessagePacker;
@@ -144,11 +143,7 @@ public class MessagePackRPC implements AutoCloseable {
             callback.setError(error.get());
             cursor.skip();
         } else {
-            try {
-                callback.setResult(objectMapper, toByteArray(cursor.next()));
-            } catch (IOException e) {
-                throw new MessageFormatException(e);
-            }
+            callback.setResult(objectMapper, toByteArray(cursor.next()));
         }
     }
 
