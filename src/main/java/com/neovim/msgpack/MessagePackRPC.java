@@ -15,6 +15,8 @@ import org.msgpack.value.ArrayCursor;
 import org.msgpack.value.Value;
 import org.msgpack.value.ValueRef;
 import org.msgpack.value.ValueType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -57,6 +59,8 @@ public class MessagePackRPC implements AutoCloseable {
         OutputStream getOutputStream();
     }
 
+    private static final Logger log = LoggerFactory.getLogger(MessagePackRPC.class);
+
     private final RequestIdGenerator idGenerator;
     private final MessagePack msgPack = new MessagePack();
 
@@ -90,9 +94,8 @@ public class MessagePackRPC implements AutoCloseable {
         this.idGenerator = checkNotNull(idGenerator);
         this.objectMapper = checkNotNull(objectMapper);
         this.connection = checkNotNull(connection);
-        notificationHandler = (method, arg) -> System.out.print("Received notification" + method + "(" + arg + ")");
-        requestHandler =
-                (method, arg) -> new NeovimException(-1, "Does not support Requests");
+        notificationHandler = (method, arg) -> log.warn("Received notification {}({})", method, arg);
+        requestHandler = (method, arg) -> new NeovimException(-1, "Does not support Requests");
     }
 
     private void parseNotification(ArrayCursor cursor) {
@@ -117,7 +120,7 @@ public class MessagePackRPC implements AutoCloseable {
         try {
             send(new Response(requestId, result));
         } catch (IOException e) {
-            System.err.println("Ignoring exception from sending response " + e);
+            log.error("Ignoring exception from sending response {}", e.getMessage(), e);
         }
     }
 
@@ -248,13 +251,13 @@ public class MessagePackRPC implements AutoCloseable {
             while (unpacker.hasNext()) {
                 MessageFormat format = unpacker.getNextFormat();
                 if (format.getValueType() != ValueType.ARRAY) {
-                    System.err.println("Received " + format + " ignoring... " + unpacker.getCursor().next());
+                    log.error("Received {}, ignoring... {}", format, unpacker.getCursor().next());
                     continue;
                 }
 
                 ArrayCursor cursor = unpacker.getCursor().next().getArrayCursor();
                 try {
-                    System.out.println(cursor);
+                    log.info("{}", cursor);
                     parsePacket(cursor);
                 } catch (MessagePackException e) {
                     e.printStackTrace();
@@ -262,7 +265,7 @@ public class MessagePackRPC implements AutoCloseable {
             }
         } catch (IOException e) {
             if (!closed) {
-                e.printStackTrace();
+                log.error("Input Stream error before closed: {}", e.getMessage(), e);
             }
         }
     }
