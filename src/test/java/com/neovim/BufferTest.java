@@ -46,17 +46,13 @@ public class BufferTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] payloadContents = payload.toByteArray();
         MessagePack.newDefaultPacker(out)
-                .packArrayHeader(1)
                 .packExtendedTypeHeader(EXT_TYPE, payloadContents.length)
                 .writePayload(payloadContents)
                 .close();
 
-        ByteArrayOutputStream objectMapperOut = new ByteArrayOutputStream();
-        objectMapper.writeValue(objectMapperOut, new Buffer[] { buffer });
-        System.out.println(MessagePack.newDefaultUnpacker(objectMapperOut.toByteArray()).getCursor().next());
+        byte[] objectMapperOut = objectMapper.writeValueAsBytes(buffer);
 
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(objectMapperOut.toByteArray());
-        assertThat(unpacker.unpackArrayHeader(), is(1));
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(objectMapperOut);
         ExtendedTypeHeader extendedTypeHeader = unpacker.unpackExtendedTypeHeader();
         assertThat(extendedTypeHeader.getLength(), is(1));
         assertThat(extendedTypeHeader.getType(), is(EXT_TYPE));
@@ -64,7 +60,7 @@ public class BufferTest {
         unpacker.readPayload(buf);
         assertThat(buf, is(payload.toByteArray()));
 
-        assertThat(objectMapperOut.toByteArray(), is(out.toByteArray()));
+        assertThat(objectMapperOut, is(out.toByteArray()));
     }
 
     @Test
@@ -77,26 +73,19 @@ public class BufferTest {
         byte[] payloadContents = payload.toByteArray();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         MessagePack.newDefaultPacker(out)
-                .packArrayHeader(1)
                 .packExtendedTypeHeader(EXT_TYPE, payloadContents.length)
                 .writePayload(payloadContents)
                 .close();
 
-        ArrayList<Buffer> list = objectMapper.readValue(
-                out.toByteArray(),
-                new TypeReference<ArrayList<Buffer>>() {});
-
-        assertThat(list.size(), is(1));
-        assertThat(list.get(0), is(buffer));
+        Buffer b = objectMapper.readValue(out.toByteArray(), Buffer.class);
+        assertThat(b, is(buffer));
     }
 
     @Test
     public void serializeDeserialize_sameObject() throws Exception {
-        // Serializer can't handle object not wrapped in array
-        Buffer[] wrapped = new Buffer[]{ buffer };
-        byte[] serializedValue = objectMapper.writeValueAsBytes(wrapped);
-        Buffer[] deserializedValue = objectMapper.readValue(serializedValue, Buffer[].class);
+        byte[] serializedValue = objectMapper.writeValueAsBytes(buffer);
+        Buffer deserializedValue = objectMapper.readValue(serializedValue, Buffer.class);
 
-        assertThat(deserializedValue[0], is(buffer));
+        assertThat(deserializedValue, is(buffer));
     }
 }

@@ -46,16 +46,13 @@ public class TabPageTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] payloadContents = payload.toByteArray();
         MessagePack.newDefaultPacker(out)
-                .packArrayHeader(1)
                 .packExtendedTypeHeader(EXT_TYPE, payloadContents.length)
                 .writePayload(payloadContents)
                 .close();
 
-        ByteArrayOutputStream objectMapperOut = new ByteArrayOutputStream();
-        objectMapper.writeValue(objectMapperOut, new TabPage[] { tabPage });
+        byte[] objectMapperOut = objectMapper.writeValueAsBytes(tabPage);
 
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(objectMapperOut.toByteArray());
-        assertThat(unpacker.unpackArrayHeader(), is(1));
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(objectMapperOut);
         ExtendedTypeHeader extendedTypeHeader = unpacker.unpackExtendedTypeHeader();
         assertThat(extendedTypeHeader.getLength(), is(1));
         assertThat(extendedTypeHeader.getType(), is(EXT_TYPE));
@@ -63,7 +60,7 @@ public class TabPageTest {
         unpacker.readPayload(buf);
         assertThat(buf, is(payload.toByteArray()));
 
-        assertThat(objectMapperOut.toByteArray(), is(out.toByteArray()));
+        assertThat(objectMapperOut, is(out.toByteArray()));
     }
 
     @Test
@@ -76,26 +73,19 @@ public class TabPageTest {
         byte[] payloadContents = payload.toByteArray();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         MessagePack.newDefaultPacker(out)
-                .packArrayHeader(1)
                 .packExtendedTypeHeader(EXT_TYPE, payloadContents.length)
                 .writePayload(payloadContents)
                 .close();
 
-        ArrayList<TabPage> list = objectMapper.readValue(
-                out.toByteArray(),
-                new TypeReference<ArrayList<TabPage>>() {});
-
-        assertThat(list.size(), is(1));
-        assertThat(list.get(0), is(tabPage));
+        TabPage t = objectMapper.readValue(out.toByteArray(), TabPage.class);
+        assertThat(t, is(tabPage));
     }
 
     @Test
     public void serializeDeserialize_sameObject() throws Exception {
-        // Serializer can't handle object not wrapped in array
-        TabPage[] wrapped = new TabPage[]{ tabPage };
-        byte[] serializedValue = objectMapper.writeValueAsBytes(wrapped);
-        TabPage[] deserializedValue = objectMapper.readValue(serializedValue, TabPage[].class);
+        byte[] serializedValue = objectMapper.writeValueAsBytes(tabPage);
+        TabPage deserializedValue = objectMapper.readValue(serializedValue, TabPage.class);
 
-        assertThat(deserializedValue[0], is(tabPage));
+        assertThat(deserializedValue, is(tabPage));
     }
 }

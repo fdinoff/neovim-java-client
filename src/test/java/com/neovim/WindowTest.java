@@ -46,16 +46,13 @@ public class WindowTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] payloadContents = payload.toByteArray();
         MessagePack.newDefaultPacker(out)
-                .packArrayHeader(1)
                 .packExtendedTypeHeader(EXT_TYPE, payloadContents.length)
                 .writePayload(payloadContents)
                 .close();
 
-        ByteArrayOutputStream objectMapperOut = new ByteArrayOutputStream();
-        objectMapper.writeValue(objectMapperOut, new Window[] { window });
+        byte[] objectMapperOut = objectMapper.writeValueAsBytes(window);
 
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(objectMapperOut.toByteArray());
-        assertThat(unpacker.unpackArrayHeader(), is(1));
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(objectMapperOut);
         ExtendedTypeHeader extendedTypeHeader = unpacker.unpackExtendedTypeHeader();
         assertThat(extendedTypeHeader.getLength(), is(1));
         assertThat(extendedTypeHeader.getType(), is(EXT_TYPE));
@@ -63,7 +60,7 @@ public class WindowTest {
         unpacker.readPayload(buf);
         assertThat(buf, is(payload.toByteArray()));
 
-        assertThat(objectMapperOut.toByteArray(), is(out.toByteArray()));
+        assertThat(objectMapperOut, is(out.toByteArray()));
     }
 
     @Test
@@ -76,26 +73,19 @@ public class WindowTest {
         byte[] payloadContents = payload.toByteArray();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         MessagePack.newDefaultPacker(out)
-                .packArrayHeader(1)
                 .packExtendedTypeHeader(EXT_TYPE, payloadContents.length)
                 .writePayload(payloadContents)
                 .close();
 
-        ArrayList<Window> list = objectMapper.readValue(
-                out.toByteArray(),
-                new TypeReference<ArrayList<Window>>() {});
-
-        assertThat(list.size(), is(1));
-        assertThat(list.get(0), is(window));
+        Window w = objectMapper.readValue(out.toByteArray(), Window.class);
+        assertThat(w, is(window));
     }
 
     @Test
     public void serializeDeserialize_sameObject() throws Exception {
-        // Serializer can't handle object not wrapped in array
-        Window[] wrapped = new Window[]{ window };
-        byte[] serializedValue = objectMapper.writeValueAsBytes(wrapped);
-        Window[] deserializedValue = objectMapper.readValue(serializedValue, Window[].class);
+        byte[] serializedValue = objectMapper.writeValueAsBytes(window);
+        Window deserializedValue = objectMapper.readValue(serializedValue, Window.class);
 
-        assertThat(deserializedValue[0], is(window));
+        assertThat(deserializedValue, is(window));
     }
 }
