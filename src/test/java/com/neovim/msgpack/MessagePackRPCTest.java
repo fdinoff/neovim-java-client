@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.msgpack.core.MessagePack;
@@ -34,16 +35,26 @@ public class MessagePackRPCTest {
     private static final String METHOD = "method";
     private static final Integer ARG = 1;
     private static final long REQUEST_ID = 1234L;
+    private static final Notification notification = new Notification(METHOD, ARG);
+    private static final Request request = new Request(METHOD, ARG);
 
+    private ObjectMapper objectMapper;
     private MessagePackRPC messagePackRPC;
     private TestConnection testConnection;
 
     @Mock InputStream inputStream;
     @Mock OutputStream outputStream;
     @Mock RequestIdGenerator idGenerator;
+    @Mock BiConsumer<String, Value> notificationHandler;
+    @Mock BiFunction<String, Value, ?> requestHandler;
+
+    @Captor ArgumentCaptor<String> stringCaptor;
+    @Captor ArgumentCaptor<Value> valueCaptor;
+    @Captor ArgumentCaptor<byte[]> byteArrayCaptor;
 
     @Before
     public void setUp() throws Exception {
+        objectMapper = new ObjectMapper(new MessagePackFactory());
         testConnection = new TestConnection(inputStream, outputStream);
 
         messagePackRPC = new MessagePackRPC(
@@ -52,12 +63,6 @@ public class MessagePackRPCTest {
 
     @Test
     public void receiverThread_callsNotificationHandlerOnNotification() throws Exception {
-        ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Value> valueArgumentCaptor = ArgumentCaptor.forClass(Value.class);
-        BiConsumer<String, Value> notificationHandler = mock(BiConsumer.class);
-
-        Notification notification = new Notification(METHOD, ARG);
-        ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
         byte[] buffer = objectMapper.writeValueAsBytes(notification);
         ByteArrayInputStream input = new ByteArrayInputStream(buffer);
         MessagePackRPC messagePackRPC = new MessagePackRPC(new TestConnection(input, outputStream));
@@ -68,10 +73,8 @@ public class MessagePackRPCTest {
         // Join with receiver thread
         messagePackRPC.close();
 
-        ArgumentCaptor<String> methodCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Value> valueCaptor = ArgumentCaptor.forClass(Value.class);
-        verify(notificationHandler).accept(methodCaptor.capture(), valueCaptor.capture());
-        assertThat(methodCaptor.getValue(), is(METHOD));
+        verify(notificationHandler).accept(stringCaptor.capture(), valueCaptor.capture());
+        assertThat(stringCaptor.getValue(), is(METHOD));
         Value value = valueCaptor.getValue();
         assertThat(value.isArray(), is(true));
         assertThat(value.asArrayValue().size(), is(1));
@@ -80,9 +83,6 @@ public class MessagePackRPCTest {
 
     @Test
     public void receiverThread_callsRequestHandlerOnRequest() throws Exception {
-        Request request = new Request(METHOD, ARG);
-        BiFunction<String, Value, ?> requestHandler = mock(BiFunction.class);
-        ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
         byte[] buffer = objectMapper.writeValueAsBytes(request);
         ByteArrayInputStream input = new ByteArrayInputStream(buffer);
         MessagePackRPC messagePackRPC = new MessagePackRPC(new TestConnection(input, outputStream));
@@ -93,10 +93,8 @@ public class MessagePackRPCTest {
         // Join with receiver thread
         messagePackRPC.close();
 
-        ArgumentCaptor<String> methodCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Value> valueCaptor = ArgumentCaptor.forClass(Value.class);
-        verify(requestHandler).apply(methodCaptor.capture(), valueCaptor.capture());
-        assertThat(methodCaptor.getValue(), is(METHOD));
+        verify(requestHandler).apply(stringCaptor.capture(), valueCaptor.capture());
+        assertThat(stringCaptor.getValue(), is(METHOD));
         Value value = valueCaptor.getValue();
         assertThat(value.isArray(), is(true));
         assertThat(value.asArrayValue().size(), is(1));
@@ -106,14 +104,13 @@ public class MessagePackRPCTest {
     @Test
     public void sendRequest_sendsRequestArray() throws Exception {
         when(idGenerator.nextId()).thenReturn(REQUEST_ID);
-        ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
         messagePackRPC.sendRequest(Object.class, METHOD, ARG);
 
-        verify(outputStream).write(argumentCaptor.capture());
+        verify(outputStream).write(byteArrayCaptor.capture());
         verify(outputStream).flush();
 
         // Make sure value sent is [ Packet.REQUEST_ID, <int>, METHOD, [ ARG ]]
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(argumentCaptor.getValue());
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(byteArrayCaptor.getValue());
         assertThat(unpacker.unpackArrayHeader(), is(4));
         assertThat(unpacker.unpackInt(), is(Packet.REQUEST_ID));
         assertThat(unpacker.unpackLong(), is(REQUEST_ID));
@@ -125,14 +122,13 @@ public class MessagePackRPCTest {
 
     @Test
     public void sendNotification_sendsNotificationArray() throws Exception {
-        ArgumentCaptor<byte[]> argumentCaptor = ArgumentCaptor.forClass(byte[].class);
         messagePackRPC.sendNotification(METHOD, ARG);
 
-        verify(outputStream).write(argumentCaptor.capture());
+        verify(outputStream).write(byteArrayCaptor.capture());
         verify(outputStream).flush();
 
         // Make sure value sent is [ Packet.NOTIFICATION_ID, METHOD, [ ARG ]]
-        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(argumentCaptor.getValue());
+        MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(byteArrayCaptor.getValue());
         assertThat(unpacker.unpackArrayHeader(), is(3));
         assertThat(unpacker.unpackInt(), is(Packet.NOTIFICATION_ID));
         assertThat(unpacker.unpackString(), is(METHOD));
