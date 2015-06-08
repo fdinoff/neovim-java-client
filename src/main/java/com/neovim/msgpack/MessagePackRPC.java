@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -275,13 +276,20 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException, ExecutionException, InterruptedException {
+    public void close() throws IOException {
         closed = true;
         connection.close();
         executorService.shutdown();
         if (receiverFuture != null) {
             // Check to see if receiver thread had an exception
-            receiverFuture.get();
+            try {
+                receiverFuture.get();
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+                throw new CompletionException(e.getMessage(), e.getCause());
+            }
         }
     }
 }

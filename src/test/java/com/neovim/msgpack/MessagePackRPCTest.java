@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -138,7 +139,7 @@ public class MessagePackRPCTest {
     }
 
     @Test
-    public void close_receiverThreadException_wrappedInExecutionException()
+    public void close_receiverThreadException_wrappedInCompletionException()
             throws IOException, InterruptedException {
         RuntimeException exception = new RuntimeException();
         when(inputStream.read(any(byte[].class))).thenThrow(exception);
@@ -147,7 +148,7 @@ public class MessagePackRPCTest {
         try {
             messagePackRPC.close();
             fail();
-        } catch (ExecutionException e) {
+        } catch (CompletionException e) {
             assertThat(e.getCause(), is(exception));
         }
     }
