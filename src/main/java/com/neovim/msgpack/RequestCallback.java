@@ -34,7 +34,7 @@ public class RequestCallback<T> {
 
     public void setResult(ObjectMapper objectMapper, byte[] result) {
         try {
-            completableFuture.complete(deserializer.apply(objectMapper, result));
+            completableFuture.complete(deserializer.call(objectMapper, result));
         } catch (IOException | MessageFormatException e) {
             completableFuture.completeExceptionally(e);
         }
