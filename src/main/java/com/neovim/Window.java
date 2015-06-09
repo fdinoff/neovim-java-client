@@ -3,7 +3,6 @@ package com.neovim;
 import com.google.common.base.Objects;
 import com.neovim.msgpack.MessagePackRPC;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -21,7 +20,7 @@ public class Window {
         return id;
     }
 
-    public CompletableFuture<Buffer> getBuffer() throws IOException {
+    public CompletableFuture<Buffer> getBuffer() {
         return messagePackRPC.sendRequest(Buffer.class, "window_get_buffer", this);
     }
 

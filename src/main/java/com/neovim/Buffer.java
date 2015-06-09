@@ -3,7 +3,6 @@ package com.neovim;
 import com.google.common.base.Objects;
 import com.neovim.msgpack.MessagePackRPC;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
@@ -22,26 +21,26 @@ public class Buffer {
         return id;
     }
 
-    public CompletableFuture<Long> getLineCount() throws IOException {
+    public CompletableFuture<Long> getLineCount() {
         return messagePackRPC.sendRequest(Long.class, "buffer_line_count", this);
     }
 
-    public CompletableFuture<byte[]> getLine(int index) throws IOException {
+    public CompletableFuture<byte[]> getLine(int index) {
         return messagePackRPC.sendRequest(byte[].class, "buffer_get_line", this, index);
     }
 
-    public void setLine(int index, byte[] line) throws IOException {
+    public void setLine(int index, byte[] line) {
         messagePackRPC.sendNotification("buffer_set_line", this, index, line);
     }
 
-    public void deleteLine(int index) throws IOException {
+    public void deleteLine(int index) {
         messagePackRPC.sendNotification("buffer_del_line", this, index);
     }
 
     /*
 
     TODO: finish getLineSlice
-    public CompletableFuture<ArrayList<byte[]>> getLineSlice(int start, int end, boolean includeStart, boolean includeEnd) throws IOException {
+    public CompletableFuture<ArrayList<byte[]>> getLineSlice(int start, int end, boolean includeStart, boolean includeEnd) {
         Request request = new Request("buffer_get_line_slice", this, start, end, includeStart, includeEnd);
         return messagePackRPC.sendRequest(request, ArrayList.class);
     }
@@ -52,23 +51,23 @@ public class Buffer {
     // TODO: this_get_option
     // TODO: this_set_option
 
-    public CompletableFuture<Long> getBufferNumber() throws IOException {
+    public CompletableFuture<Long> getBufferNumber() {
         return messagePackRPC.sendRequest(Long.class, "buffer_get_number", this);
     }
 
-    public CompletableFuture<byte[]> getName() throws IOException {
+    public CompletableFuture<byte[]> getName() {
         return messagePackRPC.sendRequest(byte[].class, "buffer_get_name", this);
     }
 
-    public void setName(String name) throws IOException {
+    public void setName(String name) {
         messagePackRPC.sendNotification("buffer_set_name", this, name);
     }
 
-    public CompletableFuture<Boolean> isValid() throws IOException {
+    public CompletableFuture<Boolean> isValid() {
         return messagePackRPC.sendRequest(Boolean.class, "buffer_is_valid", this);
     }
 
-    public void insert(int lineNumber, ArrayList<String> lines) throws IOException {
+    public void insert(int lineNumber, ArrayList<String> lines) {
         messagePackRPC.sendNotification("buffer_insert", this, lineNumber, lines);
     }
 

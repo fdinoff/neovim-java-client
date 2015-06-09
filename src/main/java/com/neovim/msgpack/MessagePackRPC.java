@@ -23,6 +23,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -181,8 +182,7 @@ public class MessagePackRPC implements AutoCloseable {
         output.flush();
     }
 
-    private <T> CompletableFuture<T> sendRequest(Request data, RequestCallback<T> callback)
-            throws IOException {
+    private <T> CompletableFuture<T> sendRequest(Request data, RequestCallback<T> callback) {
         // Make sure the id is not already in use. (Should never loop)
         long id;
         do {
@@ -194,33 +194,41 @@ public class MessagePackRPC implements AutoCloseable {
             send(data);
         } catch (IOException e) {
             callbacks.remove(id);
-            throw e;
+            callback.getCompletableFuture().completeExceptionally(e);
+            throw new UncheckedIOException(e);
         }
         return callback.getCompletableFuture();
     }
 
     public <T> CompletableFuture<T> sendRequest(
-            TypeReference<T> typeReference, String functionName, Object... args)
-            throws IOException {
-        RequestCallback<T> callback = new RequestCallback<>(typeReference);
-        return sendRequest(new Request(functionName, args), callback);
+            TypeReference<T> typeReference, String functionName, Object... args) {
+        return sendRequest(new Request(functionName, args), new RequestCallback<>(typeReference));
     }
 
     public <T> CompletableFuture<T> sendRequest(
-            Class<T> resultClass, String functionName, Object... args) throws IOException {
-        RequestCallback<T> callback = new RequestCallback<>(resultClass);
-        return sendRequest(new Request(functionName, args), callback);
+            Class<T> resultClass, String functionName, Object... args) {
+        return sendRequest(new Request(functionName, args), new RequestCallback<>(resultClass));
     }
 
     public <T> CompletableFuture<T> sendRequest(
-            Function<ValueRef, T> deserializer, String functionName, Object... args)
-            throws IOException {
-        RequestCallback<T> callback = new RequestCallback<>(deserializer);
-        return sendRequest(new Request(functionName, args), callback);
+            Function<ValueRef, T> deserializer, String functionName, Object... args) {
+        return sendRequest(new Request(functionName, args), new RequestCallback<>(deserializer));
     }
 
-    public void sendNotification(String functionName, Object... args) throws IOException {
-        send(new Notification(functionName, args));
+    /**
+     * send Message Pack notification rpc
+     *
+     * @param functionName The function to be called.
+     * @param args the arguments to the function.
+     *
+     * @throws UncheckedIOException if message fails to be sent.
+     */
+    public void sendNotification(String functionName, Object... args) {
+        try {
+            send(new Notification(functionName, args));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public void setRequestHandler(BiFunction<String, Value, ?> requestHandler) {

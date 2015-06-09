@@ -23,7 +23,7 @@ public class TabPage {
         return id;
     }
 
-    public CompletableFuture<List<Window>> getWindows() throws IOException {
+    public CompletableFuture<List<Window>> getWindows() {
         return messagePackRPC.sendRequest(
                 new TypeReference<List<Window>>() {}, "tabpage_get_windows", this);
     }
@@ -31,11 +31,11 @@ public class TabPage {
     // TODO: tabpage_get_var
     // TODO: tabpage_set_var
 
-    public CompletableFuture<Window> getWindow() throws IOException {
+    public CompletableFuture<Window> getWindow() {
         return messagePackRPC.sendRequest(Window.class, "tabpage_get_window", this);
     }
 
-    public CompletableFuture<Boolean> isValid() throws IOException {
+    public CompletableFuture<Boolean> isValid() {
         return messagePackRPC.sendRequest(Boolean.class, "tabpage_is_valid", this);
     }
 
