@@ -91,8 +91,8 @@ public class Neovim implements AutoCloseable {
         return messagePackRPC.sendRequest(type, "vim_set_var", name, value);
     }
 
-    public <T> CompletableFuture<T> getInternalVar(TypeReference<T> type, String name) {
-        return messagePackRPC.sendRequest(type, "vim_get_vvar", name);
+    public <T> CompletableFuture<T> getInternalVar(InternalVar<T> var) {
+        return messagePackRPC.sendRequest(var.type, "vim_get_vvar", var.name);
     }
 
     public <T> CompletableFuture<T> getOption(Class<T> type, String str) {
@@ -170,5 +170,11 @@ public class Neovim implements AutoCloseable {
     @Override
     public void close() throws IOException {
         messagePackRPC.close();
+    }
+
+    public static void main(String[] main) throws IOException {
+        try (Neovim neovim = Neovim.connectTo(new EmbeddedNeovim("nvim", "-u", "NONE"))) {
+            neovim.getInternalVar(InternalVar.VERSION).thenAccept(System.out::println);
+        }
     }
 }
