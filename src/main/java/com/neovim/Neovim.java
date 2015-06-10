@@ -44,10 +44,6 @@ public class Neovim implements AutoCloseable {
         return messagePackRPC.sendRequest(Long.class, "vim_input", input);
     }
 
-    public CompletableFuture<Window> getCurrentWindow() {
-        return messagePackRPC.sendRequest(Window.class, "vim_get_current_window");
-    }
-
     public CompletableFuture<String> replaceTermcodes(
             String str, boolean fromPart, boolean doLt, boolean special) {
         return messagePackRPC.sendRequest(
@@ -75,12 +71,16 @@ public class Neovim implements AutoCloseable {
         messagePackRPC.sendNotification("vim_change_directory", directory);
     }
 
-    public <T> CompletableFuture<T> getOption(Class<T> type, String str) {
-        return messagePackRPC.sendRequest(type, "vim_get_option", str);
+    public CompletableFuture<byte[]> getCurrentLine() {
+        return messagePackRPC.sendRequest(byte[].class, "vim_get_current_line");
     }
 
-    public CompletableFuture<TabPage> getCurrentTabPage() {
-        return messagePackRPC.sendRequest(TabPage.class, "vim_get_current_tabpage");
+    public void setCurrentLine(byte[] line) {
+        messagePackRPC.sendNotification("vim_set_current_line", line);
+    }
+
+    public void deleteCurrentLine() {
+        messagePackRPC.sendNotification("vim_del_current_line");
     }
 
     public <T> CompletableFuture<T> getVar(TypeReference<T> type, String name) {
@@ -90,6 +90,82 @@ public class Neovim implements AutoCloseable {
     public <T> CompletableFuture<T> setVar(TypeReference<T> type, String name, T value) {
         return messagePackRPC.sendRequest(type, "vim_set_var", name, value);
     }
+
+    public <T> CompletableFuture<T> getInternalVar(TypeReference<T> type, String name) {
+        return messagePackRPC.sendRequest(type, "vim_get_vvar", name);
+    }
+
+    public <T> CompletableFuture<T> getOption(Class<T> type, String str) {
+        return messagePackRPC.sendRequest(type, "vim_get_option", str);
+    }
+
+    public <T> void setOption(String str, T value) {
+        messagePackRPC.sendNotification("vim_set_option", str, value);
+    }
+
+    public void writeOutput(String str) {
+        messagePackRPC.sendNotification("vim_out_write", str);
+    }
+
+    public void writeError(String str) {
+        messagePackRPC.sendNotification("vim_err_write", str);
+    }
+
+    public void reportError(String str) {
+        messagePackRPC.sendNotification("vim_report_error", str);
+    }
+
+    public CompletableFuture<List<Buffer>> getBuffers() {
+        return messagePackRPC.sendRequest(new TypeReference<List<Buffer>>() {}, "vim_get_buffers");
+    }
+
+    public CompletableFuture<Buffer> getCurrentBuffer() {
+        return messagePackRPC.sendRequest(new TypeReference<Buffer>() {}, "vim_get_current_buffer");
+    }
+
+    public void setCurrentBuffer(Buffer buf) {
+        messagePackRPC.sendNotification("vim_set_current_buffer", buf);
+    }
+
+    public CompletableFuture<List<Window>> getWindows() {
+        return messagePackRPC.sendRequest(new TypeReference<List<Window>>() {}, "vim_get_windows");
+    }
+
+    public CompletableFuture<Window> getCurrentWindow() {
+        return messagePackRPC.sendRequest(Window.class, "vim_get_current_window");
+    }
+
+    public void setCurrentWindow(Window window) {
+        messagePackRPC.sendNotification("vim_set_current_window", window);
+    }
+
+    public CompletableFuture<List<TabPage>> getTabPages() {
+        return messagePackRPC.sendRequest(
+                new TypeReference<List<TabPage>>() {}, "vim_get_tabpages");
+    }
+
+    public CompletableFuture<TabPage> getCurrentTabPage() {
+        return messagePackRPC.sendRequest(TabPage.class, "vim_get_current_tabpage");
+    }
+
+    public void setCurrentTabPage(TabPage tabPage) {
+        messagePackRPC.sendNotification("vim_set_current_tabpage", tabPage);
+    }
+
+    public void subscribe(String event) {
+        messagePackRPC.sendNotification("vim_subscribe", event);
+    }
+
+    public void unsubscribe(String event) {
+        messagePackRPC.sendNotification("vim_unsubscribe", event);
+    }
+
+    public CompletableFuture<Long> nameToColor(String name) {
+        return messagePackRPC.sendRequest(Long.class, "vim_name_to_color", name);
+    }
+
+    // TODO: vim_get_color_map
+    // TODO: vim_get_api_info
 
     @Override
     public void close() throws IOException {
