@@ -1,5 +1,6 @@
 package com.neovim;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Objects;
 import com.neovim.msgpack.MessagePackRPC;
 
@@ -22,6 +23,51 @@ public class Window {
 
     public CompletableFuture<Buffer> getBuffer() {
         return messagePackRPC.sendRequest(Buffer.class, "window_get_buffer", this);
+    }
+
+    // TODO: window_get_cursor
+    // TODO: window_set_cursor
+
+    public CompletableFuture<Long> getHeight() {
+        return messagePackRPC.sendRequest(Long.class, "window_get_height", this);
+    }
+
+    public void setHeight(long height) {
+        messagePackRPC.sendNotification("window_set_height", this, height);
+    }
+
+    public CompletableFuture<Long> getWidth() {
+        return messagePackRPC.sendRequest(Long.class, "window_get_width", this);
+    }
+
+    public void setWidth(long width) {
+        messagePackRPC.sendNotification("window_set_width", this, width);
+    }
+
+    public <T> CompletableFuture<T> getVar(TypeReference<T> type, String name) {
+        return messagePackRPC.sendRequest(type, "window_get_var", this, name);
+    }
+
+    public <T> CompletableFuture<T> setVar(TypeReference<T> type, String name, T value) {
+        return messagePackRPC.sendRequest(type, "window_set_var", this, name, value);
+    }
+
+    public <T> CompletableFuture<T> getOption(TypeReference<T> type, String name) {
+        return messagePackRPC.sendRequest(type, "window_get_option", this, name);
+    }
+
+    public <T> CompletableFuture<T> setOption(TypeReference<T> type, String name, T value) {
+        return messagePackRPC.sendRequest(type, "window_set_option", this, name, value);
+    }
+
+    // TODO: window_get_position
+
+    public CompletableFuture<TabPage> getTabPage() {
+        return messagePackRPC.sendRequest(TabPage.class, "window_get_tabpage", this);
+    }
+
+    public CompletableFuture<Boolean> isValid() {
+        return messagePackRPC.sendRequest(Boolean.class, "window_is_valid", this);
     }
 
     @Override
