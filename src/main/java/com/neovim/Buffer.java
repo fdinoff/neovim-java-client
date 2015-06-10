@@ -1,9 +1,10 @@
 package com.neovim;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Objects;
 import com.neovim.msgpack.MessagePackRPC;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -37,19 +38,43 @@ public class Buffer {
         messagePackRPC.sendNotification("buffer_del_line", this, index);
     }
 
-    /*
-
-    TODO: finish getLineSlice
-    public CompletableFuture<ArrayList<byte[]>> getLineSlice(int start, int end, boolean includeStart, boolean includeEnd) {
-        Request request = new Request("buffer_get_line_slice", this, start, end, includeStart, includeEnd);
-        return messagePackRPC.sendRequest(request, ArrayList.class);
+    public CompletableFuture<List<byte[]>> getLineSlice(
+            long start, long end, boolean includeStart, boolean includeEnd) {
+        return messagePackRPC.sendRequest(
+                new TypeReference<List<byte[]>>() {},
+                "buffer_get_line_slice",
+                this,
+                start,
+                end,
+                includeStart,
+                includeEnd);
     }
-    */
 
-    // TODO: this_set_line_slice
-    // TODO: this_set_var
-    // TODO: this_get_option
-    // TODO: this_set_option
+    public void setLineSlice(
+            long start,
+            long end,
+            boolean includeStart,
+            boolean includeEnd,
+            List<byte[]> replacements) {
+        messagePackRPC.sendNotification(
+                "buffer_set_line_slice", this, start, end, includeStart, includeEnd, replacements);
+    }
+
+    public <T> CompletableFuture<T> getVar(TypeReference<T> type, String name) {
+        return messagePackRPC.sendRequest(type, "buffer_get_var", this, name);
+    }
+
+    public <T> CompletableFuture<T> setVar(TypeReference<T> type, String name, T value) {
+        return messagePackRPC.sendRequest(type, "buffer_set_var", this, name, value);
+    }
+
+    public <T> CompletableFuture<T> getOption(TypeReference<T> type, String name) {
+        return messagePackRPC.sendRequest(type, "buffer_get_option", this, name);
+    }
+
+    public <T> CompletableFuture<T> setOption(TypeReference<T> type, String name, T value) {
+        return messagePackRPC.sendRequest(type, "buffer_set_option", this, name, value);
+    }
 
     public CompletableFuture<Long> getBufferNumber() {
         return messagePackRPC.sendRequest(Long.class, "buffer_get_number", this);
@@ -67,7 +92,7 @@ public class Buffer {
         return messagePackRPC.sendRequest(Boolean.class, "buffer_is_valid", this);
     }
 
-    public void insert(int lineNumber, ArrayList<String> lines) {
+    public void insert(int lineNumber, List<String> lines) {
         messagePackRPC.sendNotification("buffer_insert", this, lineNumber, lines);
     }
 
