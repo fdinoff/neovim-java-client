@@ -96,7 +96,9 @@ public class Buffer {
         messagePackRPC.sendNotification("buffer_insert", this, lineNumber, lines);
     }
 
-    // TODO: this_get_mark
+    public CompletableFuture<Position> getMark(String name) {
+        return messagePackRPC.sendRequest(Position.class, "buffer_get_mark", this, name);
+    }
 
     @Override
     public boolean equals(Object o) {

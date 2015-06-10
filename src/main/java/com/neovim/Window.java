@@ -25,8 +25,13 @@ public class Window {
         return messagePackRPC.sendRequest(Buffer.class, "window_get_buffer", this);
     }
 
-    // TODO: window_get_cursor
-    // TODO: window_set_cursor
+    public CompletableFuture<Position> getCursorPosition() {
+        return messagePackRPC.sendRequest(Position.class, "window_get_cursor", this);
+    }
+
+    public void setCursorPosition(Position pos) {
+        messagePackRPC.sendNotification("window_set_cursor", this, pos);
+    }
 
     public CompletableFuture<Long> getHeight() {
         return messagePackRPC.sendRequest(Long.class, "window_get_height", this);
@@ -60,7 +65,9 @@ public class Window {
         return messagePackRPC.sendRequest(type, "window_set_option", this, name, value);
     }
 
-    // TODO: window_get_position
+    public CompletableFuture<Position> getPosition() {
+        return messagePackRPC.sendRequest(Position.class, "window_get_position", this);
+    }
 
     public CompletableFuture<TabPage> getTabPage() {
         return messagePackRPC.sendRequest(TabPage.class, "window_get_tabpage", this);
