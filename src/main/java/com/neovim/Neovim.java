@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.neovim.msgpack.MessagePackRPC;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -23,6 +25,11 @@ public class Neovim implements AutoCloseable {
 
     Neovim(MessagePackRPC messagePackRPC) {
         this.messagePackRPC = checkNotNull(messagePackRPC);
+    }
+
+    public CompletableFuture<Charset> getEncoding() {
+        return getOption(byte[].class, "encoding").thenApply(
+                bytes -> Charset.forName(new String(bytes, StandardCharsets.US_ASCII)));
     }
 
     public void sendVimCommand(String command) {
@@ -51,19 +58,37 @@ public class Neovim implements AutoCloseable {
         return messagePackRPC.sendRequest(String.class, "vim_command_output", str);
     }
 
-    // TODO: eval
+    public <T> CompletableFuture<T> eval(TypeReference<T> type, String str) {
+        return messagePackRPC.sendRequest(type, "vim_eval", str);
+    }
 
     public CompletableFuture<Long> stringWidth(String str) {
         return messagePackRPC.sendRequest(Long.class, "vim_strwidth", str);
     }
 
-    public CompletableFuture<ArrayList<byte[]>> getRuntimePaths() {
+    public CompletableFuture<List<byte[]>> getRuntimePaths() {
         return messagePackRPC.sendRequest(
-                new TypeReference<ArrayList<byte[]>>() {}, "vim_list_runtime_paths");
+                new TypeReference<List<byte[]>>() {}, "vim_list_runtime_paths");
     }
 
     public void changeDirectory(String directory) {
         messagePackRPC.sendNotification("vim_change_directory", directory);
+    }
+
+    public <T> CompletableFuture<T> getOption(Class<T> type, String str) {
+        return messagePackRPC.sendRequest(type, "vim_get_option", str);
+    }
+
+    public CompletableFuture<TabPage> getCurrentTabPage() {
+        return messagePackRPC.sendRequest(TabPage.class, "vim_get_current_tabpage");
+    }
+
+    public <T> CompletableFuture<T> getVar(TypeReference<T> type, String name) {
+        return messagePackRPC.sendRequest(type, "vim_get_var", name);
+    }
+
+    public <T> CompletableFuture<T> setVar(TypeReference<T> type, String name, T value) {
+        return messagePackRPC.sendRequest(type, "vim_set_var", name, value);
     }
 
     @Override

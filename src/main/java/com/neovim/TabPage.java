@@ -28,8 +28,13 @@ public class TabPage {
                 new TypeReference<List<Window>>() {}, "tabpage_get_windows", this);
     }
 
-    // TODO: tabpage_get_var
-    // TODO: tabpage_set_var
+    public <T> CompletableFuture<T> getVar(TypeReference<T> type, String name) {
+        return messagePackRPC.sendRequest(type, "tabpage_get_var", this, name);
+    }
+
+    public <T> CompletableFuture<T> setVar(TypeReference<T> type, String name, T value) {
+        return messagePackRPC.sendRequest(type, "tabpage_set_var", this, name, value);
+    }
 
     public CompletableFuture<Window> getWindow() {
         return messagePackRPC.sendRequest(Window.class, "tabpage_get_window", this);
