@@ -1,6 +1,7 @@
 package com.neovim;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.neovim.msgpack.MessagePackRPC;
 
@@ -118,7 +119,7 @@ public class Buffer {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
                 .add("messagePackRPC", messagePackRPC)
                 .add("id", id)
                 .toString();
