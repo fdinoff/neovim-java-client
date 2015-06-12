@@ -13,7 +13,7 @@ public class Notification implements Packet {
 
     public Notification(String method, Object... args) {
         this.method = method;
-        this.args = new ArrayList(Arrays.asList(args));
+        this.args = new ArrayList<>(Arrays.asList(args));
     }
 
     public int getType() {
