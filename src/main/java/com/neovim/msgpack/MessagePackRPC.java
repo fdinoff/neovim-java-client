@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.msgpack.core.MessageFormat;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessagePackException;
-import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 import org.msgpack.value.ArrayCursor;
@@ -18,7 +17,6 @@ import org.msgpack.value.ValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +38,7 @@ import java.util.function.Function;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.neovim.msgpack.Utilities.toByteArray;
 
 public class MessagePackRPC implements AutoCloseable {
 
@@ -124,18 +123,6 @@ public class MessagePackRPC implements AutoCloseable {
         } catch (IOException e) {
             log.error("Ignoring exception from sending response {}", e.getMessage(), e);
         }
-    }
-
-    private byte[] toByteArray(ValueRef valueRef) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        MessagePacker packer = msgPack.newPacker(out);
-        try {
-            valueRef.writeTo(packer);
-            packer.close();
-        } catch (IOException e) {
-            throw new Error("ByteArrayOutputStream can't throw.", e);
-        }
-        return out.toByteArray();
     }
 
     void parseResponse(ArrayCursor cursor) {
