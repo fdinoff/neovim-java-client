@@ -15,8 +15,16 @@ public class Neovim implements AutoCloseable {
 
     private final MessagePackRPC messagePackRPC;
 
-    public static Neovim connectTo(MessagePackRPC.Connection connection) {
+    public static Neovim connectTo(MessagePackRPC.Connection connection, Object... handlers) {
         MessagePackRPC messagePackRPC = new MessagePackRPC(connection);
+
+        Dispatcher dispatcher = new Dispatcher();
+        messagePackRPC.setNotificationHandler(dispatcher::notificationHandler);
+        messagePackRPC.setRequestHandler(dispatcher::requestHandler);
+        for (Object handler : handlers) {
+            dispatcher.register(handler);
+        }
+
         Neovim neovim = new Neovim(messagePackRPC);
         messagePackRPC.registerModule(new NeovimModule(messagePackRPC));
         messagePackRPC.start();
