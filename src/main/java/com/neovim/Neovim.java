@@ -172,11 +172,28 @@ public class Neovim implements AutoCloseable {
         return messagePackRPC.sendRequest(Long.class, "vim_name_to_color", name);
     }
 
+    public <T> CompletableFuture<T> call(Class<T> type,  String name, Object... args) {
+        return messagePackRPC.sendRequest(type, name, args);
+    }
+
+    public void notify(String name, Object... args) {
+        messagePackRPC.sendNotification(name, args);
+    }
+
     // TODO: vim_get_color_map
     // TODO: vim_get_api_info
 
     @Override
     public void close() throws IOException {
         messagePackRPC.close();
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        try (Neovim neovim = Neovim.connectTo(new SocketNeovim("127.0.0.1:6666"), new StupidUI())) {
+            neovim.notify("ui_attach", 80, 10, false);
+            while (true) {
+                neovim.sendInput(new String(new char[] { (char) System.in.read() } ));
+            }
+        }
     }
 }

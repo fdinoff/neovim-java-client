@@ -13,7 +13,9 @@ import org.msgpack.value.Value;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -33,6 +35,23 @@ public class DispatcherTest {
     @Before
     public void setUp() {
         dispatcher = new Dispatcher();
+    }
+
+    @Test
+    public void request_methodArgList_conjoinsArgumentsAsList() throws JsonProcessingException {
+        dispatcher.register(
+                new Object() {
+                    @NeovimHandler(NAME)
+                    public String concat(List<String> list) {
+                        return list.stream().collect(Collectors.joining(" "));
+                    }
+                }
+        );
+
+        Value value = unpack(pack(HELLO, ONE));
+        String result = (String) dispatcher.requestHandler(NAME, value);
+
+        assertThat(result, is(HELLO_1));
     }
 
     @Test

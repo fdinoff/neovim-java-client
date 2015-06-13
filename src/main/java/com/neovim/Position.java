@@ -6,13 +6,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonFormat(shape = JsonFormat.Shape.ARRAY)
 public class Position {
-    @JsonProperty(index = 0) public long row;
-    @JsonProperty(index = 1) public long col;
+    @JsonProperty(index = 0) public int row;
+    @JsonProperty(index = 1) public int col;
 
     @JsonCreator
     public Position(
-            @JsonProperty(value = "row", index = 0) long row,
-            @JsonProperty(value = "col", index = 1) long col) {
+            @JsonProperty(value = "row", index = 0) int row,
+            @JsonProperty(value = "col", index = 1) int col) {
         this.row = row;
         this.col = col;
     }

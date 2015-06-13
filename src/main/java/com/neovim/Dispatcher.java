@@ -1,9 +1,11 @@
 package com.neovim;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.reflect.TypeToken;
 import com.neovim.msgpack.NeovimException;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 import org.msgpack.value.ArrayCursor;
+import org.msgpack.value.Value;
 import org.msgpack.value.ValueRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +15,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -23,7 +24,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.getRootCause;
 import static com.neovim.msgpack.Utilities.toByteArray;
-import static java.util.stream.Collectors.toList;
 
 public class Dispatcher {
     private static final Logger log = LoggerFactory.getLogger(Dispatcher.class);
@@ -47,6 +47,10 @@ public class Dispatcher {
                     requestHandlers.put(neovimHandler.value(), new Invoker(handler, method));
                 }
             }
+        }
+
+        if (handler instanceof DispatcherHelper) {
+            ((DispatcherHelper) handler).setDispatcher(this);
         }
     }
 
@@ -100,19 +104,33 @@ public class Dispatcher {
             ArrayCursor cursor = ref.getArrayCursor();
             Type[] types = method.getGenericParameterTypes();
 
+            ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
+            if (types.length == 1) {
+                TypeToken token = TypeToken.of(types[0]);
+                if (token.equals(new TypeToken<List<Value>>() {})) {
+                    List<Value> list = new ArrayList<>();
+                    while (cursor.hasNext()) {
+                        list.add(cursor.next().toValue());
+                    }
+                    return this.method.invoke(object, list);
+                }
+            }
+
             checkArgument(types.length == cursor.size(),
-                    "Wrong number of Arguments: expected %s got %s", types.length, cursor.size());
+                    "Wrong number of Arguments for %s: expected %s got %s",
+                    method.getName(),
+                    types.length,
+                    cursor.size());
 
             List<Object> l = new ArrayList<>(cursor.size());
-            ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
             for (int i = 0; i < types.length; i++) {
                 byte[] bytes = toByteArray(cursor.next());
                 l.add(objectMapper.readValue(bytes, objectMapper.constructType(types[i])));
             }
 
-            System.out.println(l);
-            System.out.println(l.stream().map(Object::getClass).collect(toList()));
-            System.out.println(Arrays.toString(l.toArray()));
+            //System.out.println(l);
+            //System.out.println(l.stream().map(Object::getClass).collect(toList()));
+            //System.out.println(Arrays.toString(l.toArray()));
             return this.method.invoke(object, l.toArray());
         }
     }
