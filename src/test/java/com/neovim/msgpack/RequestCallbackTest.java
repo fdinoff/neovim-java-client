@@ -1,7 +1,8 @@
 package com.neovim.msgpack;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Rule;
@@ -14,25 +15,21 @@ import org.msgpack.value.ValueRef;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 
 import static junit.framework.TestCase.fail;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RequestCallbackTest {
 
     RequestCallback<Object> requestCallback;
-    byte[] data = new byte[10];
 
-    @Mock Function<ValueRef, Object> deserializer;
+    @Mock JsonNode data;
+    @Mock JsonParser jsonParser;
+    @Mock JavaType type;
     @Mock ValueRef ref;
     @Mock Object result;
     @Mock NeovimException neovimException;
@@ -42,41 +39,25 @@ public class RequestCallbackTest {
 
     @Before
     public void setUp() throws Exception {
-        requestCallback = new RequestCallback<>(deserializer);
-        when(deserializer.apply(any(ValueRef.class))).thenReturn(result);
-        when(objectMapper.readValue(eq(data), any(Class.class))).thenReturn(result);
+        when(data.traverse()).thenReturn(jsonParser);
+        when(objectMapper.readValue(jsonParser, type)).thenReturn(result);
+
+        requestCallback = new RequestCallback<>(type);
     }
 
     @Test
-    public void setResult_deserializer() throws Exception {
-        RequestCallback<Object> requestCallback = new RequestCallback<>(deserializer);
+    public void setResult_type() throws IOException {
+        RequestCallback<Object> requestCallback = new RequestCallback<>(type);
         requestCallback.setResult(objectMapper, data);
 
-        verify(deserializer).apply(any(ValueRef.class));
-    }
-
-    @Test
-    public void setResult_typeReference() throws IOException {
-        TypeReference<Object> typeReference = new TypeReference<Object>() {};
-        RequestCallback<Object> requestCallback = new RequestCallback<Object>(typeReference);
-        requestCallback.setResult(objectMapper, data);
-
-        verify(objectMapper).readValue(data, typeReference);
-    }
-
-    @Test
-    public void setResult_class() throws IOException {
-        RequestCallback<Object> requestCallback = new RequestCallback<Object>(Object.class);
-        requestCallback.setResult(objectMapper, data);
-
-        verify(objectMapper).readValue(data, Object.class);
+        verify(objectMapper).readValue(jsonParser, type);
     }
 
     @Test
     public void testSetError() throws Exception {
         requestCallback.setError(neovimException);
 
-        verify(deserializer, never()).apply(any());
+        assertThat(requestCallback.getCompletableFuture().isCompletedExceptionally(), is(true));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.neovim.msgpack;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.value.ArrayCursor;
 import org.msgpack.value.ValueRef;
@@ -17,6 +18,21 @@ public class NeovimException extends RuntimeException {
 
     public long getErrorCode() {
         return errorCode;
+    }
+
+    public static Optional<NeovimException> parseError(JsonNode node) {
+        if (node.isNull()) {
+            return Optional.empty();
+        }
+
+        if (node.isArray() && node.size() == 2) {
+            if (node.isIntegralNumber()) {
+                long errorCode = node.asLong();
+                String errorMessage = node.asText();
+                return Optional.of(new NeovimException(errorCode, errorMessage));
+            }
+        }
+        return Optional.of(new NeovimException(-1, "Unknown Error: " + node));
     }
 
     public static Optional<NeovimException> parseError(ValueRef possibleError) {
