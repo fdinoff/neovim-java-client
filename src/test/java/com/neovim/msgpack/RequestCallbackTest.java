@@ -1,6 +1,5 @@
 package com.neovim.msgpack;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
@@ -10,7 +9,7 @@ import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.msgpack.value.ValueRef;
+import org.msgpack.value.ImmutableValue;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +22,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -32,8 +30,8 @@ public class RequestCallbackTest {
     RequestCallback<Object> requestCallback;
     byte[] data = new byte[10];
 
-    @Mock Function<ValueRef, Object> deserializer;
-    @Mock ValueRef ref;
+    @Mock Function<ImmutableValue, Object> deserializer;
+    @Mock ImmutableValue ref;
     @Mock Object result;
     @Mock NeovimException neovimException;
     @Mock ObjectMapper objectMapper;
@@ -43,7 +41,7 @@ public class RequestCallbackTest {
     @Before
     public void setUp() throws Exception {
         requestCallback = new RequestCallback<>(deserializer);
-        when(deserializer.apply(any(ValueRef.class))).thenReturn(result);
+        when(deserializer.apply(any(ImmutableValue.class))).thenReturn(result);
         when(objectMapper.readValue(eq(data), any(Class.class))).thenReturn(result);
     }
 
@@ -52,7 +50,7 @@ public class RequestCallbackTest {
         RequestCallback<Object> requestCallback = new RequestCallback<>(deserializer);
         requestCallback.setResult(objectMapper, data);
 
-        verify(deserializer).apply(any(ValueRef.class));
+        verify(deserializer).apply(any(ImmutableValue.class));
     }
 
     @Test

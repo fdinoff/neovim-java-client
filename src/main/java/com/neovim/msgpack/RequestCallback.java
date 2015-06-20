@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.msgpack.core.MessageFormatException;
 import org.msgpack.core.MessagePack;
-import org.msgpack.value.ValueRef;
+import org.msgpack.value.ImmutableValue;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -27,9 +27,9 @@ public class RequestCallback<T> {
         this.deserializer = (objectMapper, bytes) -> objectMapper.readValue(bytes, resultClass);
     }
 
-    public RequestCallback(Function<ValueRef, T> deserializer) {
+    public RequestCallback(Function<ImmutableValue, T> deserializer) {
         this.deserializer = (objectMapper, bytes) ->
-                deserializer.apply(MessagePack.newDefaultUnpacker(bytes).getCursor().next());
+                deserializer.apply(MessagePack.newDefaultUnpacker(bytes).unpackValue());
     }
 
     public void setResult(ObjectMapper objectMapper, byte[] result) {

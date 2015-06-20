@@ -11,15 +11,15 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.neovim.msgpack.MessagePackRPC;
 import org.msgpack.core.MessagePack;
-import org.msgpack.jackson.dataformat.MessagePackExtendedType;
+import org.msgpack.jackson.dataformat.MessagePackExtensionType;
 import org.msgpack.jackson.dataformat.MessagePackGenerator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.function.BiFunction;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.msgpack.core.ExtensionTypeHeader.checkedCastToByte;
 
 public class NeovimModule extends SimpleModule {
     // TODO: Change from hardcoded values to values retrieved from getApiInfo
@@ -53,9 +53,8 @@ public class NeovimModule extends SimpleModule {
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 MessagePack.newDefaultPacker(out).packLong(buffer.getId()).close();
-                MessagePackExtendedType extendedType =
-                        new MessagePackExtendedType(bufferType, ByteBuffer.wrap(out.toByteArray()));
-                generator.writeExtendedType(extendedType);
+                generator.writeExtensionType(
+                        new MessagePackExtensionType(checkedCastToByte(bufferType), out.toByteArray()));
             }
         });
 
@@ -76,9 +75,8 @@ public class NeovimModule extends SimpleModule {
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 MessagePack.newDefaultPacker(out).packLong(buffer.getId()).close();
-                MessagePackExtendedType extendedType =
-                        new MessagePackExtendedType(windowType, ByteBuffer.wrap(out.toByteArray()));
-                generator.writeExtendedType(extendedType);
+                generator.writeExtensionType(
+                        new MessagePackExtensionType(checkedCastToByte(windowType), out.toByteArray()));
             }
         });
 
@@ -100,10 +98,8 @@ public class NeovimModule extends SimpleModule {
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 MessagePack.newDefaultPacker(out).packLong(buffer.getId()).close();
-                MessagePackExtendedType extendedType =
-                        new MessagePackExtendedType(
-                                tabPageType, ByteBuffer.wrap(out.toByteArray()));
-                generator.writeExtendedType(extendedType);
+                generator.writeExtensionType(
+                        new MessagePackExtensionType(checkedCastToByte(tabPageType), out.toByteArray()));
             }
         });
         // Adding Serializers and Deserializers must happen before this
@@ -130,18 +126,15 @@ public class NeovimModule extends SimpleModule {
         @Override
         public T deserialize(JsonParser jsonParser, DeserializationContext context)
                 throws IOException, JsonProcessingException {
-            MessagePackExtendedType extendedType =
-                    (MessagePackExtendedType) jsonParser.getEmbeddedObject();
-            if (extendedType.extType() != extType) {
-                throw new JsonParseException(String.format("extendedType != %d", extType),
+            MessagePackExtensionType extensionValue =
+                    (MessagePackExtensionType) jsonParser.getEmbeddedObject();
+            if (extensionValue.getType() != extType) {
+                throw new JsonParseException(String.format("extensionType != %d", extType),
                         jsonParser.getCurrentLocation());
             }
-            byte[] b = new byte[extendedType.byteBuffer().remaining()];
-            extendedType.byteBuffer().get(b);
-            long id = MessagePack.newDefaultUnpacker(b)
-                    .getCursor()
-                    .nextRef()
-                    .asInteger()
+            long id = MessagePack.newDefaultUnpacker(extensionValue.getData())
+                    .unpackValue()
+                    .asIntegerValue()
                     .asLong();
             return supplier.apply(messagePackRPC, id);
         }

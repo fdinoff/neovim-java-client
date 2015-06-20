@@ -79,9 +79,9 @@ public class MessagePackRPCTest {
         verify(notificationHandler).accept(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
         Value value = valueCaptor.getValue();
-        assertThat(value.isArray(), is(true));
+        assertThat(value.isArrayValue(), is(true));
         assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asInteger().asInt(), is(ARG));
+        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
     }
 
     @Test
@@ -98,9 +98,9 @@ public class MessagePackRPCTest {
         verify(notificationHandler).accept(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
         Value value = valueCaptor.getValue();
-        assertThat(value.isArray(), is(true));
+        assertThat(value.isArrayValue(), is(true));
         assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asInteger().asInt(), is(ARG));
+        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
     }
 
     @Test
@@ -117,9 +117,9 @@ public class MessagePackRPCTest {
         verify(notificationHandler, times(2)).accept(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
         Value value = valueCaptor.getValue();
-        assertThat(value.isArray(), is(true));
+        assertThat(value.isArrayValue(), is(true));
         assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asInteger().asInt(), is(ARG));
+        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
     }
 
     @Test
@@ -136,9 +136,9 @@ public class MessagePackRPCTest {
         verify(requestHandler).apply(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
         Value value = valueCaptor.getValue();
-        assertThat(value.isArray(), is(true));
+        assertThat(value.isArrayValue(), is(true));
         assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asInteger().asInt(), is(ARG));
+        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
     }
 
     @Test
@@ -155,9 +155,9 @@ public class MessagePackRPCTest {
         verify(requestHandler).apply(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
         Value value = valueCaptor.getValue();
-        assertThat(value.isArray(), is(true));
+        assertThat(value.isArrayValue(), is(true));
         assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asInteger().asInt(), is(ARG));
+        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
     }
 
     @Test

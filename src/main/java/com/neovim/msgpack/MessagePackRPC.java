@@ -5,16 +5,14 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.msgpack.core.MessageFormat;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessagePackException;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
-import org.msgpack.value.ArrayCursor;
+import org.msgpack.value.ImmutableArrayValue;
+import org.msgpack.value.ImmutableValue;
 import org.msgpack.value.Value;
-import org.msgpack.value.ValueRef;
-import org.msgpack.value.ValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,22 +98,22 @@ public class MessagePackRPC implements AutoCloseable {
         requestHandler = (method, arg) -> new NeovimException(-1, "Does not support Requests");
     }
 
-    private void parseNotification(ArrayCursor cursor) {
-        checkArgument(cursor.size() == 3);
+    private void parseNotification(ImmutableArrayValue values) {
+        checkArgument(values.size() == 3);
 
-        String method = cursor.next().toString();
-        Value arg = cursor.next().toValue();
+        String method = values.get(1).asRawValue().asString();
+        Value arg = values.get(2);
 
         // TODO: Consider moving onto separate thread
         notificationHandler.accept(method, arg);
     }
 
-    private void parseRequest(ArrayCursor cursor) {
-        checkArgument(cursor.size() == 4);
+    private void parseRequest(ImmutableArrayValue values) {
+        checkArgument(values.size() == 4);
 
-        long requestId = cursor.next().asInteger().asLong();
-        String method = cursor.next().toString();
-        Value arg = cursor.next().toValue();
+        long requestId = values.get(1).asIntegerValue().asLong();
+        String method = values.get(2).asRawValue().toString();
+        Value arg = values.get(3);
 
         // TODO: move onto separate thread to handle multiple requests
         Object result = requestHandler.apply(method, arg);
@@ -126,11 +124,11 @@ public class MessagePackRPC implements AutoCloseable {
         }
     }
 
-    private byte[] toByteArray(ValueRef valueRef) {
+    private byte[] toByteArray(Value value) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         MessagePacker packer = msgPack.newPacker(out);
         try {
-            valueRef.writeTo(packer);
+            value.writeTo(packer);
             packer.close();
         } catch (IOException e) {
             throw new Error("ByteArrayOutputStream can't throw.", e);
@@ -138,37 +136,37 @@ public class MessagePackRPC implements AutoCloseable {
         return out.toByteArray();
     }
 
-    void parseResponse(ArrayCursor cursor) {
-        checkArgument(cursor.size() == 4);
+    void parseResponse(ImmutableArrayValue values) {
+        checkArgument(values.size() == 4);
 
-        long requestId = cursor.next().asInteger().asLong();
-        Optional<NeovimException> error = NeovimException.parseError(cursor.next());
+        long requestId = values.get(1).asIntegerValue().asLong();
+        Optional<NeovimException> error
+                = NeovimException.parseError(values.get(2).immutableValue());
         RequestCallback<?> callback = callbacks.remove(requestId);
         if (error.isPresent()) {
             // No value present
             callback.setError(error.get());
-            cursor.skip();
         } else {
-            callback.setResult(objectMapper, toByteArray(cursor.next()));
+            callback.setResult(objectMapper, toByteArray(values.get(3)));
         }
     }
 
-    public void parsePacket(ArrayCursor cursor) {
-        checkArgument(cursor.size() == 3 || cursor.size() == 4);
+    public void parsePacket(ImmutableArrayValue values) {
+        checkArgument(values.size() == 3 || values.size() == 4);
 
-        int type = cursor.next().asInteger().asInt();
+        int type = values.get(0).asIntegerValue().asInt();
         switch (type) {
             case Packet.NOTIFICATION_ID:
-                parseNotification(cursor);
+                parseNotification(values);
                 break;
             case Packet.REQUEST_ID:
-                parseRequest(cursor);
+                parseRequest(values);
                 break;
             case Packet.RESPONSE_ID:
-                parseResponse(cursor);
+                parseResponse(values);
                 break;
             default:
-                throw new IllegalStateException("Not a Notification or Response " + cursor);
+                throw new IllegalStateException("Not a Notification or Response " + values);
         }
     }
 
@@ -208,7 +206,7 @@ public class MessagePackRPC implements AutoCloseable {
     }
 
     public <T> CompletableFuture<T> sendRequest(
-            Function<ValueRef, T> deserializer, String functionName, Object... args) {
+            Function<ImmutableValue, T> deserializer, String functionName, Object... args) {
         return sendRequest(new Request(functionName, args), new RequestCallback<>(deserializer));
     }
 
@@ -255,16 +253,15 @@ public class MessagePackRPC implements AutoCloseable {
         try {
             MessageUnpacker unpacker = msgPack.newUnpacker(connection.getInputStream());
             while (unpacker.hasNext()) {
-                MessageFormat format = unpacker.getNextFormat();
-                if (format.getValueType() != ValueType.ARRAY) {
-                    log.error("Received {}, ignoring... {}", format, unpacker.getCursor().next());
+                ImmutableValue value = unpacker.unpackValue();
+                if (!value.isArrayValue()) {
+                    log.error("Received {}, ignoring... {}", value.getValueType(), value);
                     continue;
                 }
 
-                ArrayCursor cursor = unpacker.getCursor().next().getArrayCursor();
                 try {
-                    log.info("{}", cursor);
-                    parsePacket(cursor);
+                    log.info("recieved: {}", value);
+                    parsePacket(value.asArrayValue());
                 } catch (MessagePackException e) {
                     e.printStackTrace();
                 }
