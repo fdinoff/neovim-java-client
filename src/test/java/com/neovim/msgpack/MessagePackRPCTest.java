@@ -15,12 +15,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 import static com.google.common.primitives.Bytes.concat;
-import static java.util.Arrays.asList;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -36,6 +37,7 @@ import static org.msgpack.core.Preconditions.checkNotNull;
 public class MessagePackRPCTest {
     private static final String METHOD = "method";
     private static final Integer ARG = 1;
+    private static final List<?> ARGS = Collections.singletonList(ARG);
     private static final long REQUEST_ID = 1234L;
     private static final ObjectMapper MAPPER = new ObjectMapper(new MessagePackFactory());
 
@@ -64,8 +66,7 @@ public class MessagePackRPCTest {
 
     @Test
     public void receiverThread_callsNotificationHandlerOnNotification() throws Exception {
-        MessagePackRPC messagePackRPC =
-                withInput(pack(Packet.NOTIFICATION_ID, METHOD, asList(ARG)));
+        MessagePackRPC messagePackRPC = withInput(pack(Packet.NOTIFICATION_ID, METHOD, ARGS));
         messagePackRPC.setNotificationHandler(notificationHandler);
         // Start Receiver Thread
         messagePackRPC.start();
@@ -83,7 +84,7 @@ public class MessagePackRPCTest {
 
     @Test
     public void receiverThread_callsNotificationHandlerOnNotification_twice() throws Exception {
-        byte[] input = pack(Packet.NOTIFICATION_ID, METHOD, asList(ARG));
+        byte[] input = pack(Packet.NOTIFICATION_ID, METHOD, ARGS);
         MessagePackRPC messagePackRPC = withInput(concat(input, input));
         messagePackRPC.setNotificationHandler(notificationHandler);
         // Start Receiver Thread
@@ -103,7 +104,7 @@ public class MessagePackRPCTest {
     @Test
     public void receiverThread_binaryMethodName_callsRequestHandlerOnRequest() throws Exception {
         MessagePackRPC messagePackRPC
-                = withInput(pack(Packet.REQUEST_ID, REQUEST_ID, METHOD.getBytes(), asList(ARG)));
+                = withInput(pack(Packet.REQUEST_ID, REQUEST_ID, METHOD.getBytes(), ARGS));
         messagePackRPC.setRequestHandler(requestHandler);
         // Start Receiver Thread
         messagePackRPC.start();
@@ -122,7 +123,7 @@ public class MessagePackRPCTest {
     @Test
     public void receiverThread_stringMethodName_callsRequestHandlerOnRequest() throws Exception {
         MessagePackRPC messagePackRPC
-                = withInput(pack(Packet.REQUEST_ID, REQUEST_ID, METHOD, asList(ARG)));
+                = withInput(pack(Packet.REQUEST_ID, REQUEST_ID, METHOD, ARGS));
         messagePackRPC.setRequestHandler(requestHandler);
         // Start Receiver Thread
         messagePackRPC.start();
@@ -149,7 +150,7 @@ public class MessagePackRPCTest {
         Request request = (Request) packetCaptor.getValue();
         assertThat(request.getRequestId(), is(REQUEST_ID));
         assertThat(request.getMethod(), is(METHOD));
-        assertThat(request.getArgs(), is(asList(ARG)));
+        assertThat(request.getArgs(), is(ARGS));
     }
 
     @Test
@@ -161,7 +162,7 @@ public class MessagePackRPCTest {
 
         Notification request = (Notification) packetCaptor.getValue();
         assertThat(request.getMethod(), is(METHOD));
-        assertThat(request.getArgs(), is(asList(ARG)));
+        assertThat(request.getArgs(), is(ARGS));
     }
 
     @Test
