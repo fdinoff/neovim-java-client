@@ -103,7 +103,7 @@ public class MessagePackRPC implements AutoCloseable {
     private void parseNotification(ArrayCursor cursor) {
         checkArgument(cursor.size() == 3);
 
-        String method = cursor.next().asString().toString();
+        String method = cursor.next().toString();
         Value arg = cursor.next().toValue();
 
         // TODO: Consider moving onto separate thread

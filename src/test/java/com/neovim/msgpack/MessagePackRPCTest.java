@@ -65,7 +65,28 @@ public class MessagePackRPCTest {
     }
 
     @Test
-    public void receiverThread_callsNotificationHandlerOnNotification() throws Exception {
+    public void receiverThread_binaryMethodName_callsNotificationHandlerOnNotification()
+            throws Exception {
+        MessagePackRPC messagePackRPC
+                = withInput(pack(Packet.NOTIFICATION_ID, METHOD.getBytes(), ARGS));
+        messagePackRPC.setNotificationHandler(notificationHandler);
+        // Start Receiver Thread
+        messagePackRPC.start();
+
+        // Join with receiver thread
+        messagePackRPC.close();
+
+        verify(notificationHandler).accept(stringCaptor.capture(), valueCaptor.capture());
+        assertThat(stringCaptor.getValue(), is(METHOD));
+        Value value = valueCaptor.getValue();
+        assertThat(value.isArray(), is(true));
+        assertThat(value.asArrayValue().size(), is(1));
+        assertThat(value.asArrayValue().get(0).asInteger().asInt(), is(ARG));
+    }
+
+    @Test
+    public void receiverThread_stringMethodName_callsNotificationHandlerOnNotification()
+            throws Exception {
         MessagePackRPC messagePackRPC = withInput(pack(Packet.NOTIFICATION_ID, METHOD, ARGS));
         messagePackRPC.setNotificationHandler(notificationHandler);
         // Start Receiver Thread
