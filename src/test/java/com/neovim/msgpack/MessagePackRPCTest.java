@@ -101,14 +101,34 @@ public class MessagePackRPCTest {
     }
 
     @Test
-    public void receiverThread_stringMethodName_callsRequestHandlerOnRequest() throws Exception {
-        MessagePackRPC rpc = withInput(pack(Packet.REQUEST_ID, REQUEST_ID, METHOD, asList(ARG)));
-        rpc.setRequestHandler(requestHandler);
+    public void receiverThread_binaryMethodName_callsRequestHandlerOnRequest() throws Exception {
+        MessagePackRPC messagePackRPC
+                = withInput(pack(Packet.REQUEST_ID, REQUEST_ID, METHOD.getBytes(), asList(ARG)));
+        messagePackRPC.setRequestHandler(requestHandler);
         // Start Receiver Thread
-        rpc.start();
+        messagePackRPC.start();
 
         // Join with receiver thread
-        rpc.close();
+        messagePackRPC.close();
+
+        verify(requestHandler).apply(stringCaptor.capture(), valueCaptor.capture());
+        assertThat(stringCaptor.getValue(), is(METHOD));
+        Value value = valueCaptor.getValue();
+        assertThat(value.isArray(), is(true));
+        assertThat(value.asArrayValue().size(), is(1));
+        assertThat(value.asArrayValue().get(0).asInteger().asInt(), is(ARG));
+    }
+
+    @Test
+    public void receiverThread_stringMethodName_callsRequestHandlerOnRequest() throws Exception {
+        MessagePackRPC messagePackRPC
+                = withInput(pack(Packet.REQUEST_ID, REQUEST_ID, METHOD, asList(ARG)));
+        messagePackRPC.setRequestHandler(requestHandler);
+        // Start Receiver Thread
+        messagePackRPC.start();
+
+        // Join with receiver thread
+        messagePackRPC.close();
 
         verify(requestHandler).apply(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));

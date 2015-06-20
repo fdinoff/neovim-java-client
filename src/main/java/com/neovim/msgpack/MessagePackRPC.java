@@ -114,7 +114,7 @@ public class MessagePackRPC implements AutoCloseable {
         checkArgument(cursor.size() == 4);
 
         long requestId = cursor.next().asInteger().asLong();
-        String method = cursor.next().asString().toString();
+        String method = cursor.next().toString();
         Value arg = cursor.next().toValue();
 
         // TODO: move onto separate thread to handle multiple requests
