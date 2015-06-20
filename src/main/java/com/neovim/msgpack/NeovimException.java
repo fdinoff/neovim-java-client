@@ -1,8 +1,9 @@
 package com.neovim.msgpack;
 
 import org.msgpack.core.MessagePacker;
-import org.msgpack.value.ArrayCursor;
-import org.msgpack.value.ValueRef;
+import org.msgpack.value.ImmutableArrayValue;
+import org.msgpack.value.ImmutableValue;
+import org.msgpack.value.IntegerValue;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -19,21 +20,19 @@ public class NeovimException extends RuntimeException {
         return errorCode;
     }
 
-    public static Optional<NeovimException> parseError(ValueRef possibleError) {
-        if (possibleError.isNil()) {
+    public static Optional<NeovimException> parseError(ImmutableValue possibleError) {
+        if (possibleError.isNilValue()) {
             return Optional.empty();
         }
 
-        if (possibleError.isArray()) {
-            ArrayCursor cursor = possibleError.getArrayCursor();
-            if (cursor.size() == 2) {
-
-                ValueRef next = cursor.next();
-                if (next.isInteger()) {
-                    long errorCode = next.asInteger().asLong();
-                    next = cursor.next();
-                    if (next.isBinary() || next.isString()) {
-                        String errorMessage = next.toString();
+        if (possibleError.isArrayValue()) {
+            ImmutableArrayValue values = possibleError.asArrayValue();
+            if (values.size() == 2) {
+                if (values.get(0).isIntegerValue()) {
+                    IntegerValue integerValue = values.get(0).asIntegerValue();
+                    long errorCode = integerValue.asLong();
+                    if (values.get(1).isRawValue()) {
+                        String errorMessage = values.get(1).asRawValue().toString();
                         return Optional.of(new NeovimException(errorCode, errorMessage));
                     }
                 }

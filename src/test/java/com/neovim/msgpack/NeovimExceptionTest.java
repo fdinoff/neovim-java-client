@@ -4,8 +4,8 @@ import org.junit.Test;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
-import org.msgpack.value.holder.ValueHolder;
-import org.msgpack.value.impl.NilValueImpl;
+import org.msgpack.value.ImmutableValue;
+import org.msgpack.value.ValueFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,10 +37,9 @@ public class NeovimExceptionTest {
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
         MessageUnpacker unpacker = msgPack.newUnpacker(inputStream);
-        ValueHolder v = new ValueHolder();
-        unpacker.unpackValue(v);
+        ImmutableValue value = unpacker.unpackValue();
 
-        Optional<NeovimException> neovimException = NeovimException.parseError(v.get());
+        Optional<NeovimException> neovimException = NeovimException.parseError(value);
         assertThat(neovimException.isPresent(), is(true));
         assertThat(neovimException.get().getErrorCode(), is(ERROR_CODE));
         assertThat(neovimException.get().getMessage(), is(ERROR_MESSAGE));
@@ -59,10 +58,9 @@ public class NeovimExceptionTest {
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
         MessageUnpacker unpacker = msgPack.newUnpacker(inputStream);
-        ValueHolder v = new ValueHolder();
-        unpacker.unpackValue(v);
+        ImmutableValue value = unpacker.unpackValue();
 
-        Optional<NeovimException> neovimException = NeovimException.parseError(v.get());
+        Optional<NeovimException> neovimException = NeovimException.parseError(value);
         assertThat(neovimException.isPresent(), is(true));
         assertThat(neovimException.get().getErrorCode(), is(FAILED_ERROR_CODE));
         assertThat(neovimException.get().getMessage(), startsWith(FAILED_ERROR_MESSAGE_START));
@@ -70,7 +68,8 @@ public class NeovimExceptionTest {
 
     @Test
     public void parseError_nilReference_emptyOptional() {
-        Optional<NeovimException> neovimException = NeovimException.parseError(NilValueImpl.getInstance());
+        Optional<NeovimException> neovimException
+                = NeovimException.parseError(ValueFactory.newNil());
 
         assertThat(neovimException.isPresent(), is(false));
     }
@@ -85,10 +84,9 @@ public class NeovimExceptionTest {
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
         MessageUnpacker unpacker = msgPack.newUnpacker(inputStream);
-        ValueHolder v = new ValueHolder();
-        unpacker.unpackValue(v);
+        ImmutableValue value = unpacker.unpackValue();
 
-        Optional<NeovimException> neovimException = NeovimException.parseError(v.get());
+        Optional<NeovimException> neovimException = NeovimException.parseError(value);
         assertThat(neovimException.isPresent(), is(true));
         assertThat(neovimException.get().getErrorCode(), is(FAILED_ERROR_CODE));
         assertThat(neovimException.get().getMessage(), startsWith(FAILED_ERROR_MESSAGE_START));
