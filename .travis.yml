@@ -1,0 +1,10 @@
+language: java
+jdk:
+  - oraclejdk8
+
+sudo: false
+cache:
+  directories:
+    - $HOME/.m2
+before_cache:
+  - mvn build-helper:remove-project-artifact
