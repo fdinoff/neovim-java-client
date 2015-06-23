@@ -1,6 +1,7 @@
 # Neovim Java Client
 
 [![Join the chat at https://gitter.im/fdinoff/neovim-java-client](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/fdinoff/neovim-java-client?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/fdinoff/neovim-java-client.svg?branch=master)](https://travis-ci.org/fdinoff/neovim-java-client)
 
 Wrapper around the neovim message pack api to talk to a neovim process.
 This is a WIP lots of functions do not have wrappers yet.
