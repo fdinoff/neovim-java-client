@@ -19,13 +19,12 @@ import java.io.IOException;
 import java.util.function.BiFunction;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.msgpack.core.ExtensionTypeHeader.checkedCastToByte;
 
 public class NeovimModule extends SimpleModule {
     // TODO: Change from hardcoded values to values retrieved from getApiInfo
-    private static final int bufferType = 0;
-    private static final int windowType = 1;
-    private static final int tabPageType = 2;
+    private static final byte bufferType = 0;
+    private static final byte windowType = 1;
+    private static final byte tabPageType = 2;
 
     private final MessagePackRPC messagePackRPC;
 
@@ -53,8 +52,9 @@ public class NeovimModule extends SimpleModule {
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 MessagePack.newDefaultPacker(out).packLong(buffer.getId()).close();
-                generator.writeExtensionType(
-                        new MessagePackExtensionType(checkedCastToByte(bufferType), out.toByteArray()));
+                MessagePackExtensionType extensionType =
+                        new MessagePackExtensionType(bufferType, out.toByteArray());
+                generator.writeExtensionType(extensionType);
             }
         });
 
@@ -75,8 +75,9 @@ public class NeovimModule extends SimpleModule {
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 MessagePack.newDefaultPacker(out).packLong(buffer.getId()).close();
-                generator.writeExtensionType(
-                        new MessagePackExtensionType(checkedCastToByte(windowType), out.toByteArray()));
+                MessagePackExtensionType extensionType =
+                        new MessagePackExtensionType(windowType, out.toByteArray());
+                generator.writeExtensionType(extensionType);
             }
         });
 
@@ -98,8 +99,9 @@ public class NeovimModule extends SimpleModule {
 
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 MessagePack.newDefaultPacker(out).packLong(buffer.getId()).close();
-                generator.writeExtensionType(
-                        new MessagePackExtensionType(checkedCastToByte(tabPageType), out.toByteArray()));
+                MessagePackExtensionType extensionType =
+                        new MessagePackExtensionType(tabPageType, out.toByteArray());
+                generator.writeExtensionType(extensionType);
             }
         });
         // Adding Serializers and Deserializers must happen before this
