@@ -164,6 +164,14 @@ public class Neovim implements AutoCloseable {
         return messagePackRPC.sendRequest(Long.class, "vim_name_to_color", name);
     }
 
+    public <T> CompletableFuture<T> call(Class<T> type,  String name, Object... args) {
+        return messagePackRPC.sendRequest(type, name, args);
+    }
+
+    public void notify(String name, Object... args) {
+        messagePackRPC.sendNotification(name, args);
+    }
+
     // TODO: vim_get_color_map
     // TODO: vim_get_api_info
 
