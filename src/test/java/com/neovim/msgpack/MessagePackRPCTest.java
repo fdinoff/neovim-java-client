@@ -1,5 +1,6 @@
 package com.neovim.msgpack;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,7 +10,6 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
-import org.msgpack.value.Value;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,7 +25,6 @@ import static com.google.common.primitives.Bytes.concat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -47,11 +46,11 @@ public class MessagePackRPCTest {
     @Mock InputStream inputStream;
     @Mock OutputStream outputStream;
     @Mock RequestIdGenerator idGenerator;
-    @Mock BiConsumer<String, Value> notificationHandler;
-    @Mock BiFunction<String, Value, ?> requestHandler;
+    @Mock BiConsumer<String, JsonNode> notificationHandler;
+    @Mock BiFunction<String, JsonNode, ?> requestHandler;
 
     @Captor ArgumentCaptor<String> stringCaptor;
-    @Captor ArgumentCaptor<Value> valueCaptor;
+    @Captor ArgumentCaptor<JsonNode> valueCaptor;
     @Captor ArgumentCaptor<byte[]> byteArrayCaptor;
     @Captor ArgumentCaptor<Packet> packetCaptor;
     @Captor ArgumentCaptor<Integer> offsetCaptor;
@@ -78,29 +77,10 @@ public class MessagePackRPCTest {
 
         verify(notificationHandler).accept(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
-        Value value = valueCaptor.getValue();
-        assertThat(value.isArrayValue(), is(true));
-        assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
-    }
-
-    @Test
-    public void receiverThread_stringMethodName_callsNotificationHandlerOnNotification()
-            throws Exception {
-        MessagePackRPC messagePackRPC = withInput(pack(Packet.NOTIFICATION_ID, METHOD, ARGS));
-        messagePackRPC.setNotificationHandler(notificationHandler);
-        // Start Receiver Thread
-        messagePackRPC.start();
-
-        // Join with receiver thread
-        messagePackRPC.close();
-
-        verify(notificationHandler).accept(stringCaptor.capture(), valueCaptor.capture());
-        assertThat(stringCaptor.getValue(), is(METHOD));
-        Value value = valueCaptor.getValue();
-        assertThat(value.isArrayValue(), is(true));
-        assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
+        JsonNode value = valueCaptor.getValue();
+        assertThat(value.isArray(), is(true));
+        assertThat(value.size(), is(1));
+        assertThat(value.get(0).asInt(), is(ARG));
     }
 
     @Test
@@ -116,10 +96,29 @@ public class MessagePackRPCTest {
 
         verify(notificationHandler, times(2)).accept(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
-        Value value = valueCaptor.getValue();
-        assertThat(value.isArrayValue(), is(true));
-        assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
+        JsonNode value = valueCaptor.getValue();
+        assertThat(value.isArray(), is(true));
+        assertThat(value.size(), is(1));
+        assertThat(value.get(0).asInt(), is(ARG));
+    }
+
+    @Test
+    public void receiverThread_stringMethodName_callsNotificationHandlerOnNotification()
+            throws Exception {
+        MessagePackRPC messagePackRPC = withInput(pack(Packet.NOTIFICATION_ID, METHOD, ARGS));
+        messagePackRPC.setNotificationHandler(notificationHandler);
+        // Start Receiver Thread
+        messagePackRPC.start();
+
+        // Join with receiver thread
+        messagePackRPC.close();
+
+        verify(notificationHandler).accept(stringCaptor.capture(), valueCaptor.capture());
+        assertThat(stringCaptor.getValue(), is(METHOD));
+        JsonNode value = valueCaptor.getValue();
+        assertThat(value.isArray(), is(true));
+        assertThat(value.size(), is(1));
+        assertThat(value.get(0).asInt(), is(ARG));
     }
 
     @Test
@@ -135,10 +134,10 @@ public class MessagePackRPCTest {
 
         verify(requestHandler).apply(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
-        Value value = valueCaptor.getValue();
-        assertThat(value.isArrayValue(), is(true));
-        assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
+        JsonNode value = valueCaptor.getValue();
+        assertThat(value.isArray(), is(true));
+        assertThat(value.size(), is(1));
+        assertThat(value.get(0).asInt(), is(ARG));
     }
 
     @Test
@@ -154,10 +153,10 @@ public class MessagePackRPCTest {
 
         verify(requestHandler).apply(stringCaptor.capture(), valueCaptor.capture());
         assertThat(stringCaptor.getValue(), is(METHOD));
-        Value value = valueCaptor.getValue();
-        assertThat(value.isArrayValue(), is(true));
-        assertThat(value.asArrayValue().size(), is(1));
-        assertThat(value.asArrayValue().get(0).asIntegerValue().asInt(), is(ARG));
+        JsonNode value = valueCaptor.getValue();
+        assertThat(value.isArray(), is(true));
+        assertThat(value.size(), is(1));
+        assertThat(value.get(0).asInt(), is(ARG));
     }
 
     @Test
@@ -190,7 +189,7 @@ public class MessagePackRPCTest {
     public void close_receiverThreadException_wrappedInCompletionException()
             throws IOException, InterruptedException {
         RuntimeException exception = new RuntimeException();
-        when(inputStream.read(any(byte[].class))).thenThrow(exception);
+        when(objectMapper.readTree(inputStream)).thenThrow(exception);
         messagePackRPC.start();
 
         try {

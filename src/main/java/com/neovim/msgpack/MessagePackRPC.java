@@ -3,20 +3,13 @@ package com.neovim.msgpack;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.msgpack.core.MessagePack;
-import org.msgpack.core.MessagePackException;
-import org.msgpack.core.MessagePacker;
-import org.msgpack.core.MessageUnpacker;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
-import org.msgpack.value.ImmutableArrayValue;
-import org.msgpack.value.ImmutableValue;
-import org.msgpack.value.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,11 +26,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.neovim.msgpack.JsonNodeUtil.formatJsonNode;
 
 public class MessagePackRPC implements AutoCloseable {
 
@@ -62,13 +55,11 @@ public class MessagePackRPC implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(MessagePackRPC.class);
 
     private final RequestIdGenerator idGenerator;
-    private final MessagePack msgPack = new MessagePack();
-
     private final Connection connection;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ObjectMapper objectMapper;
-    private BiConsumer<String, Value> notificationHandler;
-    private BiFunction<String, Value, ?> requestHandler;
+    private BiConsumer<String, JsonNode> notificationHandler;
+    private BiFunction<String, JsonNode, ?> requestHandler;
 
     private final ConcurrentMap<Long, RequestCallback<?>> callbacks = new ConcurrentHashMap<>();
 
@@ -98,78 +89,6 @@ public class MessagePackRPC implements AutoCloseable {
         requestHandler = (method, arg) -> new NeovimException(-1, "Does not support Requests");
     }
 
-    private void parseNotification(ImmutableArrayValue values) {
-        checkArgument(values.size() == 3);
-
-        String method = values.get(1).asRawValue().asString();
-        Value arg = values.get(2);
-
-        // TODO: Consider moving onto separate thread
-        notificationHandler.accept(method, arg);
-    }
-
-    private void parseRequest(ImmutableArrayValue values) {
-        checkArgument(values.size() == 4);
-
-        long requestId = values.get(1).asIntegerValue().asLong();
-        String method = values.get(2).asRawValue().toString();
-        Value arg = values.get(3);
-
-        // TODO: move onto separate thread to handle multiple requests
-        Object result = requestHandler.apply(method, arg);
-        try {
-            send(new Response(requestId, result));
-        } catch (IOException e) {
-            log.error("Ignoring exception from sending response {}", e.getMessage(), e);
-        }
-    }
-
-    private byte[] toByteArray(Value value) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        MessagePacker packer = msgPack.newPacker(out);
-        try {
-            value.writeTo(packer);
-            packer.close();
-        } catch (IOException e) {
-            throw new Error("ByteArrayOutputStream can't throw.", e);
-        }
-        return out.toByteArray();
-    }
-
-    void parseResponse(ImmutableArrayValue values) {
-        checkArgument(values.size() == 4);
-
-        long requestId = values.get(1).asIntegerValue().asLong();
-        Optional<NeovimException> error
-                = NeovimException.parseError(values.get(2).immutableValue());
-        RequestCallback<?> callback = callbacks.remove(requestId);
-        if (error.isPresent()) {
-            // No value present
-            callback.setError(error.get());
-        } else {
-            callback.setResult(objectMapper, toByteArray(values.get(3)));
-        }
-    }
-
-    public void parsePacket(ImmutableArrayValue values) {
-        checkArgument(values.size() == 3 || values.size() == 4);
-
-        int type = values.get(0).asIntegerValue().asInt();
-        switch (type) {
-            case Packet.NOTIFICATION_ID:
-                parseNotification(values);
-                break;
-            case Packet.REQUEST_ID:
-                parseRequest(values);
-                break;
-            case Packet.RESPONSE_ID:
-                parseResponse(values);
-                break;
-            default:
-                throw new IllegalStateException("Not a Notification or Response " + values);
-        }
-    }
-
     // TODO: Determine if this should be on a separate thread
     private synchronized void send(Packet packet) throws IOException {
         OutputStream output = connection.getOutputStream();
@@ -197,17 +116,16 @@ public class MessagePackRPC implements AutoCloseable {
 
     public <T> CompletableFuture<T> sendRequest(
             TypeReference<T> typeReference, String functionName, Object... args) {
-        return sendRequest(new Request(functionName, args), new RequestCallback<>(typeReference));
+        return sendRequest(
+                new Request(functionName, args),
+                new RequestCallback<>(objectMapper.constructType(typeReference.getType())));
     }
 
     public <T> CompletableFuture<T> sendRequest(
             Class<T> resultClass, String functionName, Object... args) {
-        return sendRequest(new Request(functionName, args), new RequestCallback<>(resultClass));
-    }
-
-    public <T> CompletableFuture<T> sendRequest(
-            Function<ImmutableValue, T> deserializer, String functionName, Object... args) {
-        return sendRequest(new Request(functionName, args), new RequestCallback<>(deserializer));
+        return sendRequest(
+                new Request(functionName, args),
+                new RequestCallback<>(objectMapper.constructType(resultClass)));
     }
 
     /**
@@ -226,7 +144,7 @@ public class MessagePackRPC implements AutoCloseable {
         }
     }
 
-    public void setRequestHandler(BiFunction<String, Value, ?> requestHandler) {
+    public void setRequestHandler(BiFunction<String, JsonNode, ?> requestHandler) {
         this.requestHandler = checkNotNull(requestHandler);
     }
 
@@ -236,7 +154,7 @@ public class MessagePackRPC implements AutoCloseable {
      * @param notificationHandler the notification handler that should be used when a notification is received.
      * @throws NullPointerException if notificationHandler is null
      */
-    public void setNotificationHandler(BiConsumer<String, Value> notificationHandler) {
+    public void setNotificationHandler(BiConsumer<String, JsonNode> notificationHandler) {
         this.notificationHandler = checkNotNull(notificationHandler);
     }
 
@@ -251,25 +169,84 @@ public class MessagePackRPC implements AutoCloseable {
 
     private void readFromInput() {
         try {
-            MessageUnpacker unpacker = msgPack.newUnpacker(connection.getInputStream());
-            while (unpacker.hasNext()) {
-                ImmutableValue value = unpacker.unpackValue();
-                if (!value.isArrayValue()) {
-                    log.error("Received {}, ignoring... {}", value.getValueType(), value);
+            JsonNode jsonNode;
+            while ((jsonNode = objectMapper.readTree(connection.getInputStream())) != null) {
+                log.warn("{}", formatJsonNode(jsonNode));
+                if (!jsonNode.isArray()) {
+                    log.error("Received {}, ignoring...", jsonNode);
                     continue;
                 }
-
-                try {
-                    log.info("recieved: {}", value);
-                    parsePacket(value.asArrayValue());
-                } catch (MessagePackException e) {
-                    e.printStackTrace();
-                }
+                parsePacket(jsonNode);
             }
         } catch (IOException e) {
             if (!closed) {
                 log.error("Input Stream error before closed: {}", e.getMessage(), e);
+                throw new UncheckedIOException("Stream threw exception before closing", e);
             }
+        }
+    }
+
+    private void parsePacket(JsonNode node) {
+        checkArgument(node.isArray(), "Node needs to be an array");
+        checkArgument(node.size() == 3 || node.size() == 4);
+
+        int type = node.get(0).asInt(-1);
+        switch (type) {
+            case Packet.NOTIFICATION_ID:
+                parseNotification(node);
+                break;
+            case Packet.REQUEST_ID:
+                parseRequest(node);
+                break;
+            case Packet.RESPONSE_ID:
+                parseResponse(node);
+                break;
+            default:
+                throw new IllegalStateException("Not a Notification or Response " + node);
+        }
+    }
+
+    private void parseRequest(JsonNode node) {
+        checkArgument(node.isArray(), "Node needs to be an array");
+        checkArgument(node.size() == 4, "Request array should be size 4");
+
+        long requestId = node.get(1).asLong();
+        String method = JsonNodeUtil.getText(node.get(2));
+        JsonNode arg = node.get(3);
+        Object result = requestHandler.apply(method, arg);
+        try {
+            send(new Response(requestId, result));
+        } catch (IOException e) {
+            log.error("failed to send response: {}", e.getMessage(), e);
+        }
+    }
+
+    private void parseNotification(JsonNode node) {
+        checkArgument(node.isArray(), "Node needs to be an array");
+        checkArgument(node.size() == 3, "Notification array should be size 3");
+
+        String method = JsonNodeUtil.getText(node.get(1));
+        JsonNode arg = node.get(2);
+        notificationHandler.accept(method, arg);
+    }
+
+    private void parseResponse(JsonNode node) {
+        checkArgument(node.isArray(), "Node needs to be an array");
+        checkArgument(node.size() == 4, "Response array should be size 4");
+
+        long requestId = node.get(1).asLong();
+        RequestCallback<?> callback = callbacks.get(requestId);
+        if (callback == null) {
+            log.warn(
+                    "Response received for {}, However no request was found with that id",
+                    requestId);
+            return;
+        }
+        Optional<NeovimException> neovimException = NeovimException.parseError(node.get(2));
+        if (neovimException.isPresent()) {
+            callback.setError(neovimException.get());
+        } else {
+            callback.setResult(objectMapper, node.get(3));
         }
     }
 
