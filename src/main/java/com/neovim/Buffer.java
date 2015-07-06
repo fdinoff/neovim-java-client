@@ -101,6 +101,14 @@ public class Buffer {
         return messagePackRPC.sendRequest(Position.class, "buffer_get_mark", this, name);
     }
 
+    /**
+     * Deletes the corresponding buffer in vim.
+     */
+    public void bdelete() {
+        getBufferNumber().thenAccept(
+                num -> messagePackRPC.sendNotification("vim_command", "bdelete " + num));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
