@@ -50,11 +50,12 @@ public class EmbeddedNeovim implements MessagePackRPC.Connection {
     @Override
     public void close() throws IOException {
         try {
-            if (neovim.waitFor(1, TimeUnit.SECONDS)) {
+            if (neovim.waitFor(60, TimeUnit.SECONDS)) {
                 log.info("neovim exited with {}", neovim.exitValue());
                 thread.join();
             } else {
                 neovim.destroy();
+                log.info("neovim exited with {}", neovim.waitFor());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
