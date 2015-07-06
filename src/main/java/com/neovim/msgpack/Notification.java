@@ -27,4 +27,13 @@ public class Notification implements Packet {
     public ArrayList<?> getArgs() {
         return args;
     }
+
+    @Override
+    public String toString() {
+        return "Notification{" +
+                "type=" + type +
+                ", method='" + method + '\'' +
+                ", args=" + args +
+                '}';
+    }
 }

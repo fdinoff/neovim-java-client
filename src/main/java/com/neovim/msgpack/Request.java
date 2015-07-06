@@ -38,4 +38,14 @@ public class Request implements Packet {
     public void setRequestId(long requestId) {
         this.requestId = requestId;
     }
+
+    @Override
+    public String toString() {
+        return "Request{" +
+                "type=" + type +
+                ", requestId=" + requestId +
+                ", method='" + method + '\'' +
+                ", args=" + args +
+                '}';
+    }
 }

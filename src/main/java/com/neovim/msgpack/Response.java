@@ -25,4 +25,13 @@ public class Response implements Packet {
     public void setError(NeovimException exception) {
         this.exception = exception;
     }
+
+    @Override
+    public String toString() {
+        return "Response{" +
+                "requestId=" + requestId +
+                ", exception=" + exception +
+                ", result=" + result +
+                '}';
+    }
 }
