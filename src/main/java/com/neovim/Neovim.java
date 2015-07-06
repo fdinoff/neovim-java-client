@@ -1,6 +1,7 @@
 package com.neovim;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neovim.msgpack.MessagePackRPC;
 
 import java.io.IOException;
@@ -14,17 +15,32 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class Neovim implements AutoCloseable {
 
     private final MessagePackRPC messagePackRPC;
+    private final Dispatcher dispatcher;
 
-    public static Neovim connectTo(MessagePackRPC.Connection connection) {
-        MessagePackRPC messagePackRPC = new MessagePackRPC(connection);
-        Neovim neovim = new Neovim(messagePackRPC);
+    public static Neovim connectTo(MessagePackRPC.Connection connection, Object... handlers) {
+        ObjectMapper objectMapper = MessagePackRPC.defaultObjectMapper();
+        MessagePackRPC messagePackRPC = new MessagePackRPC(connection, objectMapper);
+
+        Dispatcher dispatcher = new Dispatcher(objectMapper);
+        messagePackRPC.setNotificationHandler(dispatcher::dispatchMethod);
+        messagePackRPC.setRequestHandler(dispatcher::dispatchMethod);
+        for (Object handler : handlers) {
+            dispatcher.register(handler);
+        }
+
+        Neovim neovim = new Neovim(messagePackRPC, dispatcher);
         messagePackRPC.registerModule(new NeovimModule(messagePackRPC));
         messagePackRPC.start();
         return neovim;
     }
 
-    Neovim(MessagePackRPC messagePackRPC) {
+    public void register(Object handler) {
+        dispatcher.register(handler);
+    }
+
+    Neovim(MessagePackRPC messagePackRPC, Dispatcher dispatcher) {
         this.messagePackRPC = checkNotNull(messagePackRPC);
+        this.dispatcher = checkNotNull(dispatcher);
     }
 
     public CompletableFuture<Charset> getEncoding() {
