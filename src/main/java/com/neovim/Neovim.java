@@ -16,6 +16,7 @@ public class Neovim implements AutoCloseable {
 
     private final MessagePackRPC messagePackRPC;
     private final Dispatcher dispatcher;
+    private CompletableFuture<ApiInfo.ApiInfoHolder> apiInfoHolder;
 
     public static Neovim connectTo(MessagePackRPC.Connection connection, Object... handlers) {
         ObjectMapper objectMapper = MessagePackRPC.defaultObjectMapper();
@@ -189,7 +190,26 @@ public class Neovim implements AutoCloseable {
     }
 
     // TODO: vim_get_color_map
-    // TODO: vim_get_api_info
+
+    private CompletableFuture<ApiInfo.ApiInfoHolder> getApiInfoHolder() {
+        if (apiInfoHolder == null) {
+            synchronized (this) {
+                if (apiInfoHolder == null) {
+                    apiInfoHolder = messagePackRPC.sendRequest(
+                            ApiInfo.ApiInfoHolder.class, "vim_get_api_info");
+                }
+            }
+        }
+        return apiInfoHolder;
+    }
+
+    public CompletableFuture<Long> getChannelId() {
+        return getApiInfoHolder().thenApply(apiInfoHolder -> apiInfoHolder.channelId);
+    }
+
+    public CompletableFuture<ApiInfo> getApiInfo() {
+        return getApiInfoHolder().thenApply(apiInfoHolder -> apiInfoHolder.apiInfo);
+    }
 
     @Override
     public void close() throws IOException {
