@@ -2,11 +2,14 @@ package com.neovim.msgpack;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import java.util.Arrays;
+
 @JsonFormat(shape = JsonFormat.Shape.ARRAY)
 public class Response implements Packet {
-    public long requestId;
-    NeovimException exception;
-    Object result;
+    private int type = RESPONSE_ID;
+    private long requestId;
+    private NeovimException exception;
+    private Object result;
 
     public Response(long requestId, Object result) {
         this.requestId = requestId;
@@ -19,11 +22,27 @@ public class Response implements Packet {
 
     @Override
     public int getType() {
-        return RESPONSE_ID;
+        return type;
+    }
+
+    public long getRequestId() {
+        return requestId;
+    }
+
+    public Object getException() {
+        if (exception == null) {
+            return null;
+        }
+        return Arrays.asList(exception.getErrorCode(), exception.getMessage());
+    }
+
+    public Object getResult() {
+        return result;
     }
 
     public void setError(NeovimException exception) {
         this.exception = exception;
+        this.result = null;
     }
 
     @Override
